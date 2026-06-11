@@ -53,4 +53,4 @@ These are loaded via `opencode.json` and provide deeper context:
 
 ## Memory
 
-- Scope: `sp-jwt-auth`
+- Scope: `sp-laravel-api`
