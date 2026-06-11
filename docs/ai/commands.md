@@ -1,39 +1,48 @@
-# Commands (Shared)
+# Commands
 
-## Install
+## Install Dependencies
+
 ```bash
 composer install
 ```
 
-## Run (dev)
-```bash
-# Test in a Laravel application that uses this package
-composer serve
-```
-
 ## Test
+
 ```bash
 composer test
-# or
 vendor/bin/phpunit
 ```
 
-## Lint / Analyze
+Run one test class:
+
+```bash
+composer test -- --filter TokenIssueValidateTest
+```
+
+## Static Analysis
+
 ```bash
 composer analyse
-# or
-vendor/bin/phpstan analyse src tests
 ```
 
 ## Format
+
 ```bash
+composer format-check
 composer format
-# or
-vendor/bin/rector process
 ```
 
-## Build
+## Full Quality Gate
+
 ```bash
-# Package for distribution
-composer build
+composer quality
+```
+
+## Package Commands
+
+```bash
+php artisan sp-jwt-auth:install --keys
+php artisan sp-jwt-auth:keys --generate --kid=2026-06-primary
+php artisan sp-jwt-auth:jwks --pretty
+php artisan sp-jwt-auth:prune --expired-days=30 --revoked-days=30
 ```

@@ -17,6 +17,8 @@ public_html/hot
 
 storage/*.key
 .env
+.env.*
+!.env.example
 Homestead.yaml
 Homestead.json
 /.vagrant
@@ -28,3 +30,11 @@ Homestead.json
 .env.production
 .phpactor.json
 auth.json
+composer.lock
+composer.phar
+
+# Real key material should not be committed. Test fixtures are intentionally tracked.
+*.key
+*.pem
+!tests/Fixtures/keys/*.key
+!tests/Fixtures/keys/*.pem

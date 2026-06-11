@@ -1,11 +1,11 @@
 {
   "name": "sopheak/sp-jwt-auth",
-  "description": "JWT authentication for Laravel apps.",
+  "description": "First-party JWT access and rotating refresh token authentication for Laravel apps.",
   "type": "library",
   "license": "proprietary",
-  "version": "0.1.10",
   "require": {
-    "php": "^8.2|^8.3|^8.4|^8.5",
+    "php": "^8.3|^8.4|^8.5",
+    "firebase/php-jwt": "^6.10|^7.0",
     "laravel/framework": "^12.0|^13.0",
     "nesbot/carbon": "^2.0|^3.0"
   },
@@ -19,19 +19,18 @@
   },
   "autoload": {
     "psr-4": {
-      "Sopheak\\Core\\": "src/"
+      "Sopheak\\JwtAuth\\": "src/"
     }
   },
   "autoload-dev": {
     "psr-4": {
-      "Sopheak\\Core\\Tests\\": "tests/"
+      "Sopheak\\JwtAuth\\Tests\\": "tests/"
     }
   },
   "scripts": {
     "test": "vendor/bin/phpunit",
     "test-coverage": "vendor/bin/phpunit --coverage-html coverage",
     "analyse": "vendor/bin/phpstan analyse src tests",
-    "docs:validate": "php bin/validate-docs.php",
     "format": "@rector:fix",
     "format-check": "@rector:check",
     "rector": "vendor/bin/rector process --dry-run",
@@ -43,11 +42,16 @@
       "@test"
     ]
   },
-  "suggest": {},
+  "suggest": {
+    "laravel/socialite": "Required for the optional Socialite external identity module.",
+    "socialiteproviders/manager": "Required for optional community Socialite providers.",
+    "league/oauth2-client": "Required for the optional generic OAuth2/OIDC adapter module.",
+    "league/oauth2-server": "Required for the optional OAuth2 authorization server module."
+  },
   "extra": {
     "laravel": {
       "providers": [
-        "Sopheak\\Core\\CoreSpLaravelApiProvider"
+        "Sopheak\\JwtAuth\\CoreSpJwtAuthServiceProvider"
       ]
     }
   },

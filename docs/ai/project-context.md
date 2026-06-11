@@ -1,49 +1,40 @@
-# Project Context (Shared)
+# Project Context
 
 ## TL;DR
-- Product: Laravel API Core Utilities Package
-- Stack: PHP 8.1+, Laravel 10+, PostgreSQL/MySQL/SQLite
-- Goal: Standardized API responses, request ID middleware, audit logging, dynamic record handling
-- Non-goals: Full application framework, UI components
+- Product: Laravel JWT authentication package.
+- Package: `sopheak/sp-jwt-auth`.
+- Stack: PHP 8.3+, Laravel 12/13, `firebase/php-jwt`, Orchestra Testbench, PHPUnit.
+- Goal: Modular Laravel authentication infrastructure with first-party JWT, account security brokers, API keys, external identity storage, and optional OAuth server mode.
+- Non-goals: Password login, registration, tenant rules, role assignment, UI, provider-specific Social/OIDC controller flows, and app-owned OAuth consent screens.
 
 ## Repo Map
-- `src/`: Core package source code
-- `src/Console/`: CLI commands and utilities
-- `src/Enums/`: PHP enumerations
-- `src/Http/Controllers/`: API controllers
-- `src/Http/Middleware/`: Custom middleware
-- `src/Interfaces/`: PHP interfaces
-- `src/Jobs/`: Queue jobs
-- `src/Services/`: Service classes
-- `src/Support/`: Support utilities and helpers
-- `src/Traits/`: PHP traits
-- `src/Types/`: Type definitions
-- `config/`: Laravel package configuration
-- `database/migrations/`: Database migrations
-- `tests/`: PHPUnit tests
-- `routes/`: Route definitions
+- `src/`: Package source.
+- `src/Console/`: Artisan commands.
+- `src/Contracts/`: Extension contracts.
+- `src/DTO/`: Token, account security, API key, external identity, and OAuth value objects.
+- `src/Events/`: Token, account security, API key, external identity, and OAuth lifecycle events.
+- `src/Guards/`: Laravel auth guard driver.
+- `src/Http/Middleware/`: JWT, API key, and OAuth resource middleware.
+- `src/Models/`: Package-owned JWT, account security, API key, external identity, and OAuth models.
+- `src/Security/`: HMAC hash-key helpers.
+- `src/Services/`: Token, account security, API key, external identity, and OAuth services.
+- `src/Signing/`: JWT signing key and JWKS helpers.
+- `src/Support/`: Hook registry and response helpers.
+- `src/Traits/`: User model helper traits.
+- `config/`: Publishable package configuration.
+- `database/migrations/`: Package-owned token tables.
+- `routes/`: Package routes such as JWKS and optional OAuth endpoints.
+- `tests/`: PHPUnit/Testbench coverage.
+- `docs/superpowers/specs/`: Product specification.
+- `docs/superpowers/plans/`: Implementation plans.
 
-## Local Setup
-### Requirements
-- PHP 8.1+
-- Composer
-- Laravel 10+ application for testing
-- PostgreSQL/MySQL/SQLite database
+## Implemented Scope
+The implementation covers the modular roadmap:
 
-## Commands
-See docs/ai/commands.md
+- `v1.0` Core JWT: guard, signed access tokens, rotating refresh tokens, scopes, claims, revocation, key rotation, JWKS, events, hooks.
+- `v1.1` Account Security: MFA challenge broker, hashed OTP, email verification, password reset tokens, delivery contracts, events.
+- `v1.2` SaaS Integrations: scoped API keys with hashed secrets, rotation, revocation, and middleware.
+- `v2.0` External Identity: normalized external identity DTO, provider contract, and storage.
+- `v2.1` OAuth Server: separate OAuth storage, client registry, consents, authorization-code + PKCE, refresh tokens, client credentials, revocation, introspection, and resource middleware.
 
-## Coding Standards
-See docs/ai/coding-standards.md
-
-## MCP Schema Endpoint
-Route `POST /api/v1/mcp/schema` (`api_schema_mcp`) — exposed via `ApiMcpServiceProvider` when `SP_API_MCP_ENABLED=true`.
-See `docs/ai/architecture.md` and `docs/guide/modules/module-mcp.md`.
-
-## Architecture
-See docs/ai/architecture.md
-
-## Current Priorities
-- Now: Maintain API compatibility, fix PostgreSQL issues
-- Next: Add more relationship types, improve performance
-- Risks: Database compatibility across MySQL/PostgreSQL/SQLite
+Optional modules remain disabled by default and must not change the first-party JWT behavior unless explicitly used.

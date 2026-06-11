@@ -1,17 +1,20 @@
 # Changelog
 
-All notable changes to `sp-laravel-api` will be documented in this file.
+All notable changes to `sopheak/sp-jwt-auth` will be documented in this file.
 
 ## [Unreleased]
 
 ### Added
-- **Upsert Support**: Added `POST /{table}/upsert` and `POST /{table}/bulk/upsert` endpoints for atomic create-or-update operations.
-- **Match On Parameter**: Required `match_on` query parameter for upsert operations to define matching columns dynamically.
-- **Configuration**: Added `$canUpsert` to `RecordTableType` to control upsert endpoint availability (default: `true`).
-- **OpenAPI**: Updated OpenAPI generator to include single and bulk upsert endpoints with schema definitions.
-- **API Client Exporters**: Two new Artisan commands to export the OpenAPI spec to API client collections.
-  - `sp-laravel-api:export-bruno` writes a Bruno v3 collection to `api-clients/bruno/collection.bru`.
-  - `sp-laravel-api:export-postman` writes a Postman v2.1 collection to `api-clients/postman/collection.json`.
-  - Both commands support `--output=<path>`, `--regen=<list|all>` (case-insensitive against OpenAPI tags), and `--dry-run`.
-  - Both commands are diff-aware: existing requests are skipped unless listed in `--regen`; new requests are added.
-  - See `docs/guide/modules/module-api-clients.md` for full usage.
+- Core JWT package scaffold for Laravel 12 and 13.
+- `sp-jwt` guard registration for first-party bearer token authentication.
+- JWT access token issuing and validation with persisted `jti` records.
+- Opaque refresh tokens with HMAC-hashed secrets, rotation, reuse detection, and revocation.
+- Scope middleware and Passport-compatible `$user->token()` / `$user->tokenCan()` helpers.
+- Signing key repository and JWKS output for public key discovery.
+- Core install, key, JWKS, and prune Artisan commands.
+- Account security brokers for MFA challenges, hashed OTP codes, email verification tokens, and password reset tokens.
+- Sender contracts for app-owned OTP, email verification, and password reset delivery.
+- Scoped API key issuing, validation, revocation, rotation, and resource middleware.
+- External identity DTO/store and provider contract for Socialite/OIDC-style login flows.
+- Optional OAuth server storage and services with clients, consents, authorization-code + PKCE, refresh tokens, client credentials, revocation, introspection, and resource middleware.
+- Lifecycle events for account security, API keys, external identity, and OAuth server audit hooks.

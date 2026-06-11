@@ -1,27 +1,34 @@
-# Coding Standards (Shared)
+# Coding Standards
 
 ## General
-- Keep changes minimal and consistent with existing style
-- Prefer small functions and clear naming
-- Avoid breaking public APIs without discussion
-- Never add secrets
-- Follow PSR-12 coding standards
+- Keep changes minimal and consistent with Laravel package conventions.
+- Prefer small, focused classes with clear names.
+- Avoid breaking public APIs without discussion.
+- Never add real secrets, private production keys, or provider tokens.
+- Follow PSR-12 and the repository Rector rules.
 
-## Project Conventions
-- **Naming**: Use descriptive names, camelCase for variables/methods, PascalCase for classes
-- **Folder conventions**: Follow Laravel package structure patterns
-- **Error handling**: Use Laravel exceptions and proper HTTP status codes
-- **Logging**: Use Laravel's logging facade with appropriate context
-- **Testing expectations**: All new features should include tests, use PHPUnit
+## Package Conventions
+- Namespace package code under `Sopheak\JwtAuth`.
+- Use Laravel contracts and services instead of application-specific classes.
+- Keep token infrastructure generic; applications own login, registration, tenants, roles, UI, and response shape.
+- Use DTOs for package service boundaries instead of forcing JSON response helpers.
+- Store user ownership as `user_type` and `user_id` for provider/model compatibility.
+
+## Security
+- Never use `APP_KEY` as a JWT signing key.
+- Never log access tokens, refresh tokens, plaintext secrets, or private keys.
+- Hash refresh token secrets with HMAC and a stored `hash_key_id`.
+- Validate JWTs against configured algorithms and key ids only.
+- Use timing-safe comparisons for token secret hashes.
+- Run refresh rotation inside a database transaction.
 
 ## Database Compatibility
-- Support MySQL, PostgreSQL, and SQLite
-- Use database-agnostic SQL when possible
-- Avoid database-specific functions unless wrapped in compatibility layers
-- Test across all supported databases
+- Support SQLite, MySQL, and PostgreSQL through Laravel schema builder.
+- Use string-compatible polymorphic ids for app-owned models.
+- Avoid partial indexes and database-specific SQL in package migrations.
 
-## API Design
-- Use consistent JSON response format
-- Follow RESTful principles
-- Include proper error handling and validation
-- Support field selection and filtering
+## Testing
+- New behavior should include PHPUnit/Testbench coverage.
+- Follow red-green-refactor for behavior changes.
+- Prefer testing public package behavior through services, guards, middleware, and commands.
+- Run `composer test`, `composer analyse`, and `composer format-check` before claiming completion.
