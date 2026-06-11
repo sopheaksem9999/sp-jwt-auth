@@ -8,10 +8,10 @@ hero:
   actions:
     - theme: brand
       text: "Get Started"
-      link: "/guide/getting-started"
+      link: "/getting-started/overview"
     - theme: alt
-      text: "Guide Index"
-      link: "/guide/"
+      text: "Quick Start"
+      link: "/getting-started/quick-start"
 
 features:
   - title: "Core JWT"

@@ -73,11 +73,19 @@ final class ConfigSigningKeyRepository implements SigningKeyRepository
             throw new RuntimeException(sprintf('JWT key [%s] is compromised.', $kid));
         }
 
+        $privateKey = isset($item['private_key'])
+            ? (string) $item['private_key']
+            : (isset($item['private_key_path']) ? file_get_contents((string) $item['private_key_path']) : null);
+        $publicKey = (string) ($item['public_key'] ?? ($item['public_key_path'] ?? ''));
+        if ($publicKey !== '' && str_contains($publicKey, "\n") === false && file_exists($publicKey)) {
+            $publicKey = (string) file_get_contents($publicKey);
+        }
+
         return new SigningKey(
             $kid,
             (string) config('sp-jwt-auth.algorithm', 'RS256'),
-            isset($item['private_key']) ? (string) $item['private_key'] : null,
-            (string) ($item['public_key'] ?? ''),
+            is_string($privateKey) ? $privateKey : null,
+            $publicKey,
             $state,
         );
     }

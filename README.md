@@ -313,14 +313,17 @@ The package emits lifecycle events for:
 
 ## Documentation
 
-- [Guide index](docs/guide/index.md)
-- [Getting started](docs/guide/getting-started.md)
-- [Core JWT](docs/guide/core-jwt.md)
-- [Account security](docs/guide/mfa-otp.md)
-- [API keys](docs/guide/api-keys.md)
-- [External identity](docs/guide/external-identity.md)
-- [OAuth server](docs/guide/oauth-server.md)
-- [Events and hooks](docs/guide/events-hooks.md)
+- [Getting started](docs/getting-started/installation.md)
+- [Quick start](docs/getting-started/quick-start.md)
+- [Auth controller example](docs/getting-started/auth-controller.md)
+- [Core JWT](docs/core-concepts/core-jwt.md)
+- [Configuration](docs/core-concepts/configuration.md)
+- [Account security](docs/features/mfa-otp.md)
+- [API keys](docs/features/api-keys.md)
+- [External identity](docs/features/external-identity.md)
+- [OAuth server](docs/features/oauth-server.md)
+- [Events and hooks](docs/features/events-hooks.md)
+- [Middleware](docs/features/middleware.md)
 
 ## Development
 

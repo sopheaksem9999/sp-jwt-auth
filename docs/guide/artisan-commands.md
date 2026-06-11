@@ -17,12 +17,20 @@ Publishes package config and migrations. With `--keys`, it also generates signin
 
 ```bash
 php artisan sp-jwt-auth:keys --generate --kid=2026-06-primary
+php artisan sp-jwt-auth:keys --generate --kid=2026-06-primary --pem --env
 php artisan sp-jwt-auth:keys --rotate --kid=2026-07-primary
 php artisan sp-jwt-auth:keys --retire --kid=2026-06-primary
 php artisan sp-jwt-auth:keys --revoke --kid=2026-06-primary --compromised
 ```
 
 Use this command to manage JWT signing key lifecycle.
+
+Flags:
+
+- `--pem`: Output `.pem` files instead of `.key`
+- `--env`: Automatically write `SP_JWT_ACTIVE_KID` to `.env`
+- `--force`: Overwrite existing key files
+- `--path`: Output directory (default: `storage`)
 
 ## JWKS
 
