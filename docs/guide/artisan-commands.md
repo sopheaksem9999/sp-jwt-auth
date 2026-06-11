@@ -13,6 +13,7 @@ php artisan sp-jwt-auth:install --keys
 
 Publishes package config and migrations. With `--keys`, it also generates signing key material.
 
+<<<<<<< HEAD
 ## Setup
 
 ```bash
@@ -31,16 +32,22 @@ php artisan sp-jwt-auth:validate --fix
 
 Checks the configured guard, user provider, active signing key, hash key, and JWKS route. With `--fix`, it republishes package config/migrations and attempts the same safe `config/auth.php` guard patch as setup.
 
+=======
+>>>>>>> 11e06a7 (feat: add complete Laravel JWT auth package with OAuth support)
 ## Keys
 
 ```bash
 php artisan sp-jwt-auth:keys --generate --kid=2026-06-primary
+<<<<<<< HEAD
 php artisan sp-jwt-auth:keys --generate --kid=2026-06-primary --pem
+=======
+>>>>>>> 11e06a7 (feat: add complete Laravel JWT auth package with OAuth support)
 php artisan sp-jwt-auth:keys --rotate --kid=2026-07-primary
 php artisan sp-jwt-auth:keys --retire --kid=2026-06-primary
 php artisan sp-jwt-auth:keys --revoke --kid=2026-06-primary --compromised
 ```
 
+<<<<<<< HEAD
 Use this command to manage JWT signing key lifecycle. Generate and rotate actions update `.env` by default:
 
 ```env
@@ -59,6 +66,9 @@ Flags:
 - `--no-write-env`: Print the required environment values without changing `.env`
 - `--force`: Overwrite existing key files
 - `--path`: Output directory (default: `storage`)
+=======
+Use this command to manage JWT signing key lifecycle.
+>>>>>>> 11e06a7 (feat: add complete Laravel JWT auth package with OAuth support)
 
 ## JWKS
 

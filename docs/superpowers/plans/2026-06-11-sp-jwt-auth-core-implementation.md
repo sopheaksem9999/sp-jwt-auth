@@ -16,7 +16,11 @@ This plan implements the required-by-default `v1.0` Core JWT module only.
 
 Included:
 
+<<<<<<< HEAD
 - Package identity cleanup from copied `sp-jwt-auth` metadata.
+=======
+- Package identity cleanup from copied `sp-laravel-api` metadata.
+>>>>>>> 11e06a7 (feat: add complete Laravel JWT auth package with OAuth support)
 - Composer namespace `Sopheak\JwtAuth`.
 - Config `config/sp-jwt-auth.php`.
 - Migrations and models for `sp_jwt_access_tokens` and `sp_jwt_refresh_tokens`.
@@ -43,7 +47,11 @@ Create separate plans after this one:
 
 - The repository has no `src/`, `database/`, `config/`, `routes/`, or `tests/` directories.
 - `composer.json` still autoloads `Sopheak\Core\` and registers `Sopheak\Core\CoreSpLaravelApiProvider`.
+<<<<<<< HEAD
 - `README.md`, `CHANGELOG.md`, and `docs/guide/**` are copied from `sp-jwt-auth`.
+=======
+- `README.md`, `CHANGELOG.md`, and `docs/guide/**` are copied from `sp-laravel-api`.
+>>>>>>> 11e06a7 (feat: add complete Laravel JWT auth package with OAuth support)
 - The spec lives at `docs/superpowers/specs/2026-06-11-sp-jwt-auth-package-spec.md`.
 
 ## File Structure
@@ -101,7 +109,11 @@ Create:
 Modify:
 
 - `composer.json` - package identity, namespace, dependencies, Laravel provider.
+<<<<<<< HEAD
 - `README.md` - replace copied `sp-jwt-auth` content with Core JWT install/usage docs.
+=======
+- `README.md` - replace copied `sp-laravel-api` content with Core JWT install/usage docs.
+>>>>>>> 11e06a7 (feat: add complete Laravel JWT auth package with OAuth support)
 - `CHANGELOG.md` - replace copied package name.
 - `docs/ai/project-context.md` - replace copied project context.
 - `docs/ai/commands.md` - correct commands for this package.
@@ -110,7 +122,11 @@ Modify:
 
 Delete:
 
+<<<<<<< HEAD
 - `docs/guide/**` copied `sp-jwt-auth` guides after replacing the README and `docs/ai/**` with `sp-jwt-auth` documentation. The spec already says this package must not depend on `sopheak/sp-jwt-auth`, and leaving copied guides makes implementation error-prone.
+=======
+- `docs/guide/**` copied `sp-laravel-api` guides after replacing the README and `docs/ai/**` with `sp-jwt-auth` documentation. The spec already says this package must not depend on `sopheak/sp-laravel-api`, and leaving copied guides makes implementation error-prone.
+>>>>>>> 11e06a7 (feat: add complete Laravel JWT auth package with OAuth support)
 
 ---
 
@@ -134,7 +150,11 @@ Use this exact package shape, preserving the existing scripts where names still 
   "name": "sopheak/sp-jwt-auth",
   "description": "First-party JWT access and rotating refresh token authentication for Laravel apps.",
   "type": "library",
+<<<<<<< HEAD
   "license": "MIT",
+=======
+  "license": "proprietary",
+>>>>>>> 11e06a7 (feat: add complete Laravel JWT auth package with OAuth support)
   "version": "0.1.10",
   "require": {
     "php": "^8.3|^8.4|^8.5",
@@ -2068,19 +2088,31 @@ composer quality
 
 - [ ] **Step 3: Remove copied guide docs**
 
+<<<<<<< HEAD
 Delete `docs/guide/**` because the files document dynamic CRUD, MCP, permissions, attachments, and pagination from `sp-jwt-auth`. Keep `docs/superpowers/specs/**` and `docs/superpowers/plans/**`.
+=======
+Delete `docs/guide/**` because the files document dynamic CRUD, MCP, permissions, attachments, and pagination from `sp-laravel-api`. Keep `docs/superpowers/specs/**` and `docs/superpowers/plans/**`.
+>>>>>>> 11e06a7 (feat: add complete Laravel JWT auth package with OAuth support)
 
 - [ ] **Step 4: Search for stale identifiers**
 
 Run:
 
 ```bash
+<<<<<<< HEAD
 rg -n -F "sp-jwt-auth" .
+=======
+rg -n -F "sp-laravel-api" .
+>>>>>>> 11e06a7 (feat: add complete Laravel JWT auth package with OAuth support)
 rg -n -F "Sopheak\\Core" .
 rg -n -F "CoreSpLaravelApiProvider" .
 ```
 
+<<<<<<< HEAD
 Expected: The only `sp-jwt-auth` hits are in the technical spec where it states this package has no dependency on it.
+=======
+Expected: The only `sp-laravel-api` hits are in the technical spec where it states this package has no dependency on it.
+>>>>>>> 11e06a7 (feat: add complete Laravel JWT auth package with OAuth support)
 
 - [ ] **Step 5: Commit**
 
@@ -2208,7 +2240,11 @@ Run:
 
 ```bash
 composer validate --strict
+<<<<<<< HEAD
 rg -n -F "sopheak/sp-jwt-auth" composer.json src config database tests README.md docs/ai
+=======
+rg -n -F "sopheak/sp-laravel-api" composer.json src config database tests README.md docs/ai
+>>>>>>> 11e06a7 (feat: add complete Laravel JWT auth package with OAuth support)
 rg -n -F "Sopheak\\Core" composer.json src config database tests README.md docs/ai
 ```
 
@@ -2235,6 +2271,11 @@ git commit -m "feat: implement core sp jwt auth"
 - Scope middleware rejects missing scopes with 403.
 - JWKS exposes public active/previous keys only.
 - Commands exist for install, keys, JWKS, and pruning.
+<<<<<<< HEAD
 - Docs no longer describe `sp-jwt-auth` as this package.
 - Composer has no dependency on `sopheak/sp-jwt-auth`.
+=======
+- Docs no longer describe `sp-laravel-api` as this package.
+- Composer has no dependency on `sopheak/sp-laravel-api`.
+>>>>>>> 11e06a7 (feat: add complete Laravel JWT auth package with OAuth support)
 - Full suite passes with `composer quality`.

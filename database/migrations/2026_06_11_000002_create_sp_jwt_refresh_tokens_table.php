@@ -30,9 +30,12 @@ return new class extends Migration {
                 ->references('id')
                 ->on('sp_jwt_access_tokens')
                 ->cascadeOnDelete();
+<<<<<<< HEAD
         });
 
         Schema::table('sp_jwt_refresh_tokens', function (Blueprint $table): void {
+=======
+>>>>>>> 11e06a7 (feat: add complete Laravel JWT auth package with OAuth support)
             $table->foreign('replaced_by_id')
                 ->references('id')
                 ->on('sp_jwt_refresh_tokens')

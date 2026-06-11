@@ -40,6 +40,7 @@ final class JwtAccessToken extends Model
         return ($this->claims ?? [])[$key] ?? $default;
     }
 
+<<<<<<< HEAD
     public function companyId(): int|string|null
     {
         $value = $this->claim('company_id');
@@ -73,6 +74,8 @@ final class JwtAccessToken extends Model
         return (bool) $this->claim('impersonated', false);
     }
 
+=======
+>>>>>>> 11e06a7 (feat: add complete Laravel JWT auth package with OAuth support)
     public function subject(): ?TokenSubject
     {
         return $this->subject_type !== null && $this->subject_id !== null

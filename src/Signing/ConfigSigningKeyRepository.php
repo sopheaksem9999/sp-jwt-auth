@@ -73,6 +73,7 @@ final class ConfigSigningKeyRepository implements SigningKeyRepository
             throw new RuntimeException(sprintf('JWT key [%s] is compromised.', $kid));
         }
 
+<<<<<<< HEAD
         $privateKey = isset($item['private_key'])
             ? (string) $item['private_key']
             : (isset($item['private_key_path']) ? file_get_contents((string) $item['private_key_path']) : null);
@@ -86,6 +87,13 @@ final class ConfigSigningKeyRepository implements SigningKeyRepository
             (string) config('sp-jwt-auth.algorithm', 'RS256'),
             is_string($privateKey) ? $privateKey : null,
             $publicKey,
+=======
+        return new SigningKey(
+            $kid,
+            (string) config('sp-jwt-auth.algorithm', 'RS256'),
+            isset($item['private_key']) ? (string) $item['private_key'] : null,
+            (string) ($item['public_key'] ?? ''),
+>>>>>>> 11e06a7 (feat: add complete Laravel JWT auth package with OAuth support)
             $state,
         );
     }

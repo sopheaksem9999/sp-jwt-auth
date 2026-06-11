@@ -53,4 +53,8 @@ These are loaded via `opencode.json` and provide deeper context:
 
 ## Memory
 
+<<<<<<< HEAD
 - Scope: `sp-jwt-auth`
+=======
+- Scope: `sp-laravel-api`
+>>>>>>> 11e06a7 (feat: add complete Laravel JWT auth package with OAuth support)

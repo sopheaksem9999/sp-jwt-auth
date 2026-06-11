@@ -20,6 +20,7 @@ final readonly class ApiKeyContext
         public ?string $createdById = null,
     ) {
     }
+<<<<<<< HEAD
 
     public static function forCompany(
         int|string $companyId,
@@ -43,4 +44,6 @@ final readonly class ApiKeyContext
             createdById: $createdById,
         );
     }
+=======
+>>>>>>> 11e06a7 (feat: add complete Laravel JWT auth package with OAuth support)
 }

@@ -32,6 +32,7 @@ final class RevokeTokensTest extends TestCase
 
         self::assertSame(0, JwtAccessToken::query()->whereNull('revoked_at')->count());
     }
+<<<<<<< HEAD
 
     public function test_revoke_all_for_user_can_keep_current_session(): void
     {
@@ -75,4 +76,6 @@ final class RevokeTokensTest extends TestCase
         self::assertTrue($sessions->contains('id', $active->accessTokenRecord->id));
         self::assertFalse($sessions->contains('id', $revoked->accessTokenRecord->id));
     }
+=======
+>>>>>>> 11e06a7 (feat: add complete Laravel JWT auth package with OAuth support)
 }

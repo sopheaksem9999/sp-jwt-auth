@@ -36,6 +36,7 @@ final class ApiKeyTest extends TestCase
         self::assertNotNull(ApiKey::query()->find($result->apiKey->id)->last_used_at);
     }
 
+<<<<<<< HEAD
     public function test_api_key_context_can_be_created_for_company_integrations(): void
     {
         config()->set('sp-jwt-auth.api_keys.enabled', true);
@@ -56,6 +57,8 @@ final class ApiKeyTest extends TestCase
         self::assertSame(['qbo.sync'], $result->apiKey->scopes);
     }
 
+=======
+>>>>>>> 11e06a7 (feat: add complete Laravel JWT auth package with OAuth support)
     public function test_api_key_middleware_authenticates_and_checks_scope(): void
     {
         config()->set('sp-jwt-auth.api_keys.enabled', true);

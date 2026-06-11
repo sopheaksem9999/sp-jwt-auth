@@ -63,6 +63,7 @@ final readonly class TokenContext
         return $this->claims(array_merge($this->claims, [$key => $value]));
     }
 
+<<<<<<< HEAD
     public function claim(string $key, mixed $value): self
     {
         return $this->replaceClaim($key, $value);
@@ -102,6 +103,8 @@ final readonly class TokenContext
         return new self($this->scopes, $this->claims, $this->subjectType, $this->subjectId, $this->audience, $this->deviceId, $this->deviceName, $this->sessionId, $metadata);
     }
 
+=======
+>>>>>>> 11e06a7 (feat: add complete Laravel JWT auth package with OAuth support)
     public function subject(string $type, string $id): self
     {
         return new self($this->scopes, $this->claims, $type, $id, $this->audience, $this->deviceId, $this->deviceName, $this->sessionId, $this->metadata);

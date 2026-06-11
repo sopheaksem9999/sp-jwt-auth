@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 namespace Sopheak\JwtAuth\Tests\Feature;
 
+<<<<<<< HEAD
 use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Support\Facades\Event;
+=======
+>>>>>>> 11e06a7 (feat: add complete Laravel JWT auth package with OAuth support)
 use Illuminate\Support\Facades\Route;
 use Sopheak\JwtAuth\DTO\TokenContext;
 use Sopheak\JwtAuth\Services\JwtTokenService;
@@ -29,6 +32,7 @@ final class GuardTest extends TestCase
             ->assertJson(['id' => $user->getAuthIdentifier(), 'can_client' => true]);
     }
 
+<<<<<<< HEAD
     public function test_guard_reuses_resolved_user_within_same_request(): void
     {
         $tokenTouchCount = 0;
@@ -65,6 +69,8 @@ final class GuardTest extends TestCase
         self::assertSame(1, $tokenTouchCount);
     }
 
+=======
+>>>>>>> 11e06a7 (feat: add complete Laravel JWT auth package with OAuth support)
     public function test_package_does_not_replace_web_guard(): void
     {
         config()->set('auth.guards.web', ['driver' => 'session', 'provider' => 'users']);

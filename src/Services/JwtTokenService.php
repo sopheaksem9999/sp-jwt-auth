@@ -11,7 +11,10 @@ use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Contracts\Auth\Authenticatable;
+<<<<<<< HEAD
 use Illuminate\Database\Eloquent\Collection;
+=======
+>>>>>>> 11e06a7 (feat: add complete Laravel JWT auth package with OAuth support)
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Str;
@@ -227,11 +230,16 @@ final readonly class JwtTokenService
         Event::dispatch(new SessionRevoked($sessionId));
     }
 
+<<<<<<< HEAD
     public function revokeAllForUser(Authenticatable $user, ?string $exceptSessionId = null): void
+=======
+    public function revokeAllForUser(Authenticatable $user): void
+>>>>>>> 11e06a7 (feat: add complete Laravel JWT auth package with OAuth support)
     {
         $userType = $user::class;
         $userId = (string) $user->getAuthIdentifier();
 
+<<<<<<< HEAD
         $accessQuery = JwtAccessToken::query()
             ->where('user_type', $userType)
             ->where('user_id', $userId)
@@ -297,6 +305,13 @@ final readonly class JwtTokenService
             ->get();
     }
 
+=======
+        JwtAccessToken::query()->where('user_type', $userType)->where('user_id', $userId)->whereNull('revoked_at')->update(['revoked_at' => now()]);
+        JwtRefreshToken::query()->where('user_type', $userType)->where('user_id', $userId)->whereNull('revoked_at')->update(['revoked_at' => now()]);
+        Event::dispatch(new AllUserTokensRevoked($user));
+    }
+
+>>>>>>> 11e06a7 (feat: add complete Laravel JWT auth package with OAuth support)
     /** @return array{0: string, 1: string} */
     private function parseRefreshToken(string $refreshToken): array
     {

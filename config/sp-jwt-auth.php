@@ -25,6 +25,7 @@ return [
         'jwks_enabled' => filter_var(env('SP_JWT_JWKS_ENABLED', true), FILTER_VALIDATE_BOOL),
         'jwks_route' => env('SP_JWT_JWKS_ROUTE', '/.well-known/sp-jwt-auth/jwks.json'),
         'rotation_grace_days' => (int) env('SP_JWT_KEY_ROTATION_GRACE_DAYS', 30),
+<<<<<<< HEAD
         'items' => array_filter([
             env('SP_JWT_ACTIVE_KID', env('SP_JWT_KEY_ID')) => [
                 'state' => 'active',
@@ -32,6 +33,9 @@ return [
                 'public_key_path' => env('SP_JWT_PUBLIC_KEY_PATH') ? base_path((string) env('SP_JWT_PUBLIC_KEY_PATH')) : null,
             ],
         ], static fn (string|int $key): bool => (string) $key !== '', ARRAY_FILTER_USE_KEY),
+=======
+        'items' => [],
+>>>>>>> 11e06a7 (feat: add complete Laravel JWT auth package with OAuth support)
     ],
 
     'hash_keys' => [

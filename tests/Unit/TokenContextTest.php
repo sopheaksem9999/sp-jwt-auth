@@ -26,6 +26,7 @@ final class TokenContextTest extends TestCase
         self::assertSame('owner', $context->claims['tenant_role']);
     }
 
+<<<<<<< HEAD
     public function test_context_builds_company_claims_subject_and_impersonation(): void
     {
         $context = TokenContext::make()
@@ -54,6 +55,8 @@ final class TokenContextTest extends TestCase
         self::assertSame(['login_ip' => '127.0.0.1'], $context->metadata);
     }
 
+=======
+>>>>>>> 11e06a7 (feat: add complete Laravel JWT auth package with OAuth support)
     public function test_reserved_claim_names_are_rejected(): void
     {
         $this->expectException(InvalidArgumentException::class);

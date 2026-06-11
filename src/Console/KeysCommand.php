@@ -6,6 +6,7 @@ namespace Sopheak\JwtAuth\Console;
 
 use Illuminate\Console\Command;
 use Illuminate\Support\Str;
+<<<<<<< HEAD
 use Sopheak\JwtAuth\Support\JwtKeyEnvironment;
 
 final class KeysCommand extends Command
@@ -23,13 +24,22 @@ final class KeysCommand extends Command
         {--pem : Use .pem extension instead of .key}
         {--write-env : Deprecated; .env is updated by default after generating key files}
         {--no-write-env : Do not update .env after generating key files}';
+=======
+
+final class KeysCommand extends Command
+{
+    protected $signature = 'sp-jwt-auth:keys {--generate} {--rotate} {--retire} {--revoke} {--force} {--kid=} {--compromised} {--algorithm=RS256} {--path=storage}';
+>>>>>>> 11e06a7 (feat: add complete Laravel JWT auth package with OAuth support)
 
     protected $description = 'Generate or describe JWT signing key lifecycle changes.';
 
     public function handle(): int
     {
         $kid = (string) ($this->option('kid') ?: now()->format('Y-m') . '-' . Str::random(8));
+<<<<<<< HEAD
         $ext = $this->option('pem') ? 'pem' : 'key';
+=======
+>>>>>>> 11e06a7 (feat: add complete Laravel JWT auth package with OAuth support)
 
         if ($this->option('generate') || $this->option('rotate')) {
             $path = base_path((string) $this->option('path'));
@@ -38,6 +48,7 @@ final class KeysCommand extends Command
                 mkdir($path, 0755, true);
             }
 
+<<<<<<< HEAD
             $privateKeyPath = $path . sprintf('/jwt-private-%s.%s', $kid, $ext);
             $publicKeyPath = $path . sprintf('/jwt-public-%s.%s', $kid, $ext);
 
@@ -47,6 +58,8 @@ final class KeysCommand extends Command
                 return self::FAILURE;
             }
 
+=======
+>>>>>>> 11e06a7 (feat: add complete Laravel JWT auth package with OAuth support)
             $resource = openssl_pkey_new([
                 'private_key_bits' => 2048,
                 'private_key_type' => OPENSSL_KEYTYPE_RSA,
@@ -60,6 +73,7 @@ final class KeysCommand extends Command
 
             $details = openssl_pkey_get_details($resource);
             $public = (string) ($details['key'] ?? '');
+<<<<<<< HEAD
             file_put_contents($privateKeyPath, $private);
             file_put_contents($publicKeyPath, $public);
 
@@ -101,20 +115,35 @@ CONFIG,
                 $this->relativePath($privateKeyPath),
                 $this->relativePath($publicKeyPath),
             ));
+=======
+            file_put_contents($path . sprintf('/jwt-private-%s.key', $kid), $private);
+            file_put_contents($path . sprintf('/jwt-public-%s.key', $kid), $public);
+
+            $this->info(sprintf('Generated key pair for kid [%s].', $kid));
+            $this->line(sprintf('Set SP_JWT_ACTIVE_KID=%s and point config keys.items.%s to the generated files.', $kid, $kid));
+>>>>>>> 11e06a7 (feat: add complete Laravel JWT auth package with OAuth support)
 
             return self::SUCCESS;
         }
 
         if ($this->option('retire')) {
+<<<<<<< HEAD
             $this->line(sprintf('Remove [%s] from active keys and add to SP_JWT_PREVIOUS_KIDS.', $kid));
             $this->line('Tokens signed with a retired key remain valid until they expire.');
+=======
+            $this->line(sprintf('Remove [%s] from SP_JWT_PREVIOUS_KIDS after all tokens signed by it expire.', $kid));
+>>>>>>> 11e06a7 (feat: add complete Laravel JWT auth package with OAuth support)
 
             return self::SUCCESS;
         }
 
         if ($this->option('revoke')) {
+<<<<<<< HEAD
             $tag = $this->option('compromised') ? 'SP_JWT_COMPROMISED_KIDS' : 'SP_JWT_REVOKED_KIDS';
             $this->line(sprintf('Add [%s] to %s immediately.', $kid, $tag));
+=======
+            $this->line(sprintf('Add [%s] to SP_JWT_COMPROMISED_KIDS immediately.', $kid));
+>>>>>>> 11e06a7 (feat: add complete Laravel JWT auth package with OAuth support)
 
             return self::SUCCESS;
         }
@@ -123,6 +152,7 @@ CONFIG,
 
         return self::FAILURE;
     }
+<<<<<<< HEAD
 
     private function relativePath(string $absolute): string
     {
@@ -132,4 +162,6 @@ CONFIG,
             ? substr($absolute, strlen($base) + 1)
             : $absolute;
     }
+=======
+>>>>>>> 11e06a7 (feat: add complete Laravel JWT auth package with OAuth support)
 }

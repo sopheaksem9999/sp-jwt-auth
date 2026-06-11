@@ -2,6 +2,7 @@
   "name": "sopheak/sp-jwt-auth",
   "description": "First-party JWT access and rotating refresh token authentication for Laravel apps.",
   "type": "library",
+<<<<<<< HEAD
   "license": "MIT",
   "keywords": [
     "laravel",
@@ -10,6 +11,9 @@
     "api-key",
     "authentication"
   ],
+=======
+  "license": "proprietary",
+>>>>>>> 11e06a7 (feat: add complete Laravel JWT auth package with OAuth support)
   "require": {
     "php": "^8.3|^8.4|^8.5",
     "firebase/php-jwt": "^6.10|^7.0",

@@ -16,8 +16,11 @@ use Sopheak\JwtAuth\Console\InstallCommand;
 use Sopheak\JwtAuth\Console\JwksCommand;
 use Sopheak\JwtAuth\Console\KeysCommand;
 use Sopheak\JwtAuth\Console\PruneCommand;
+<<<<<<< HEAD
 use Sopheak\JwtAuth\Console\SetupCommand;
 use Sopheak\JwtAuth\Console\ValidateCommand;
+=======
+>>>>>>> 11e06a7 (feat: add complete Laravel JWT auth package with OAuth support)
 use Sopheak\JwtAuth\Http\Middleware\AuthenticateOAuthToken;
 use Sopheak\JwtAuth\Http\Middleware\AuthenticateApiKey;
 use Sopheak\JwtAuth\Http\Middleware\AuthenticateJwt;
@@ -74,9 +77,12 @@ final class CoreSpJwtAuthServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+<<<<<<< HEAD
         // Automatically load migrations from the package
         $this->loadMigrationsFrom(__DIR__ . '/../database/migrations');
 
+=======
+>>>>>>> 11e06a7 (feat: add complete Laravel JWT auth package with OAuth support)
         $this->publishes([
             __DIR__ . '/../config/sp-jwt-auth.php' => config_path('sp-jwt-auth.php'),
         ], 'sp-jwt-auth-config');
@@ -123,8 +129,11 @@ final class CoreSpJwtAuthServiceProvider extends ServiceProvider
         if ($this->app->runningInConsole()) {
             $this->commands([
                 InstallCommand::class,
+<<<<<<< HEAD
                 SetupCommand::class,
                 ValidateCommand::class,
+=======
+>>>>>>> 11e06a7 (feat: add complete Laravel JWT auth package with OAuth support)
                 KeysCommand::class,
                 JwksCommand::class,
                 PruneCommand::class,
