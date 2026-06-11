@@ -1,0 +1,8 @@
+title = "sp-jwt-auth gitleaks config"
+
+[allowlist]
+description = "Allow intentionally committed PHPUnit fixture keys only."
+paths = [
+  '''tests/Fixtures/keys/private\.pem''',
+  '''tests/Fixtures/keys/public\.pem''',
+]

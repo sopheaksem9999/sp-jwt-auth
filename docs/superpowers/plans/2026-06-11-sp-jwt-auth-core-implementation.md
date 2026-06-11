@@ -16,7 +16,7 @@ This plan implements the required-by-default `v1.0` Core JWT module only.
 
 Included:
 
-- Package identity cleanup from copied `sp-laravel-api` metadata.
+- Package identity cleanup from copied `sp-jwt-auth` metadata.
 - Composer namespace `Sopheak\JwtAuth`.
 - Config `config/sp-jwt-auth.php`.
 - Migrations and models for `sp_jwt_access_tokens` and `sp_jwt_refresh_tokens`.
@@ -43,7 +43,7 @@ Create separate plans after this one:
 
 - The repository has no `src/`, `database/`, `config/`, `routes/`, or `tests/` directories.
 - `composer.json` still autoloads `Sopheak\Core\` and registers `Sopheak\Core\CoreSpLaravelApiProvider`.
-- `README.md`, `CHANGELOG.md`, and `docs/guide/**` are copied from `sp-laravel-api`.
+- `README.md`, `CHANGELOG.md`, and `docs/guide/**` are copied from `sp-jwt-auth`.
 - The spec lives at `docs/superpowers/specs/2026-06-11-sp-jwt-auth-package-spec.md`.
 
 ## File Structure
@@ -101,7 +101,7 @@ Create:
 Modify:
 
 - `composer.json` - package identity, namespace, dependencies, Laravel provider.
-- `README.md` - replace copied `sp-laravel-api` content with Core JWT install/usage docs.
+- `README.md` - replace copied `sp-jwt-auth` content with Core JWT install/usage docs.
 - `CHANGELOG.md` - replace copied package name.
 - `docs/ai/project-context.md` - replace copied project context.
 - `docs/ai/commands.md` - correct commands for this package.
@@ -110,7 +110,7 @@ Modify:
 
 Delete:
 
-- `docs/guide/**` copied `sp-laravel-api` guides after replacing the README and `docs/ai/**` with `sp-jwt-auth` documentation. The spec already says this package must not depend on `sopheak/sp-laravel-api`, and leaving copied guides makes implementation error-prone.
+- `docs/guide/**` copied `sp-jwt-auth` guides after replacing the README and `docs/ai/**` with `sp-jwt-auth` documentation. The spec already says this package must not depend on `sopheak/sp-jwt-auth`, and leaving copied guides makes implementation error-prone.
 
 ---
 
@@ -2068,19 +2068,19 @@ composer quality
 
 - [ ] **Step 3: Remove copied guide docs**
 
-Delete `docs/guide/**` because the files document dynamic CRUD, MCP, permissions, attachments, and pagination from `sp-laravel-api`. Keep `docs/superpowers/specs/**` and `docs/superpowers/plans/**`.
+Delete `docs/guide/**` because the files document dynamic CRUD, MCP, permissions, attachments, and pagination from `sp-jwt-auth`. Keep `docs/superpowers/specs/**` and `docs/superpowers/plans/**`.
 
 - [ ] **Step 4: Search for stale identifiers**
 
 Run:
 
 ```bash
-rg -n -F "sp-laravel-api" .
+rg -n -F "sp-jwt-auth" .
 rg -n -F "Sopheak\\Core" .
 rg -n -F "CoreSpLaravelApiProvider" .
 ```
 
-Expected: The only `sp-laravel-api` hits are in the technical spec where it states this package has no dependency on it.
+Expected: The only `sp-jwt-auth` hits are in the technical spec where it states this package has no dependency on it.
 
 - [ ] **Step 5: Commit**
 
@@ -2208,7 +2208,7 @@ Run:
 
 ```bash
 composer validate --strict
-rg -n -F "sopheak/sp-laravel-api" composer.json src config database tests README.md docs/ai
+rg -n -F "sopheak/sp-jwt-auth" composer.json src config database tests README.md docs/ai
 rg -n -F "Sopheak\\Core" composer.json src config database tests README.md docs/ai
 ```
 
@@ -2235,6 +2235,6 @@ git commit -m "feat: implement core sp jwt auth"
 - Scope middleware rejects missing scopes with 403.
 - JWKS exposes public active/previous keys only.
 - Commands exist for install, keys, JWKS, and pruning.
-- Docs no longer describe `sp-laravel-api` as this package.
-- Composer has no dependency on `sopheak/sp-laravel-api`.
+- Docs no longer describe `sp-jwt-auth` as this package.
+- Composer has no dependency on `sopheak/sp-jwt-auth`.
 - Full suite passes with `composer quality`.

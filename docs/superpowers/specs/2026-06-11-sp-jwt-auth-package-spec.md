@@ -39,7 +39,7 @@ Applications keep product-specific logic such as login credentials, registration
 - No built-in password login endpoint.
 - No forced login identifier; apps may authenticate by email, username, phone, employee id, or any custom identifier before passing the resolved user to the package.
 - No built-in password update implementation; the app owns password hashing and policy.
-- No direct dependency on `sopheak/sp-laravel-api`.
+- No direct dependency on `sopheak/sp-jwt-auth`.
 - No SpeedX-specific company or tenant logic.
 - No SAML in v1.
 
@@ -133,7 +133,7 @@ flowchart LR
     ThirdPartyClient["Optional: Third-Party OAuth Client"]
     OAuthServer["Optional: OAuth2 Authorization Server"]
     OAuthTables[("Optional OAuth Tables")]
-    RecordApi["Optional: sopheak/sp-laravel-api"]
+    RecordApi["Optional: sopheak/sp-jwt-auth"]
 
     Client -->|"Bearer JWT"| App
     ThirdPartyClient -->|"authorize / token / revoke"| App
@@ -2969,5 +2969,5 @@ Package docs must include:
 - OAuth client-credentials tokens authenticate as clients, not users.
 - OAuth consent UI is app-owned while protocol validation is package-owned.
 - Package has no dependency on SpeedX business tables.
-- Package has no dependency on `sopheak/sp-laravel-api`.
+- Package has no dependency on `sopheak/sp-jwt-auth`.
 - Test suite passes on Laravel 12 and Laravel 13.

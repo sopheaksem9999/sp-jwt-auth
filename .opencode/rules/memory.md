@@ -4,7 +4,7 @@ When using the opencode-memory plugin in this project, follow these rules:
 
 ## Scope Convention
 
-Always use scope="sp-laravel-api" for memories specific to this project.
+Always use scope="sp-jwt-auth" for memories specific to this project.
 Replace <PROJECT_NAME> with the actual project slug (e.g., "my-api", "web-dashboard").
 
 ## When to Store Memories
@@ -20,7 +20,7 @@ Proactively remembaer:
 ## When Starting a New Session
 
 Always recall project memories first:
-- `memory_recall(scope="sp-laravel-api")` — get all project context
+- `memory_recall(scope="sp-jwt-auth")` — get all project context
 - `memory_recall(scope="user")` — get user preferences
 
 ## Memory Format

@@ -68,7 +68,7 @@
     "external_directory": {
       "~/.claude/skills/**": "allow",
       "~/.agents/skills/**": "allow",
-      "../Package/sp-laravel-api/**": "allow",
+      "../Package/sp-jwt-auth/**": "allow",
       "*": "ask"
     }
   },
