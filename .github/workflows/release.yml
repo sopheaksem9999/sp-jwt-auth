@@ -1,0 +1,154 @@
+name: Release
+
+# Runs only after the Security workflow completes on main or develop.
+# If any security check failed, both release jobs are skipped automatically.
+on:
+  workflow_run:
+    workflows: ["Security"]
+    types:
+      - completed
+    branches:
+      - main
+      - develop
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.event.workflow_run.head_branch }}
+  cancel-in-progress: true
+
+jobs:
+
+  # ─────────────────────────────────────────────
+  # Stable release — triggered by push to main
+  # ─────────────────────────────────────────────
+  release-stable:
+    # Only run when security passed AND the push was to main
+    if: |
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.head_branch == 'main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+        with:
+          # Check out the exact commit that security.yml scanned
+          ref: ${{ github.event.workflow_run.head_sha }}
+          fetch-depth: 0
+          fetch-tags: true
+          persist-credentials: false
+
+      - name: Read version from composer.json or VERSION
+        id: read
+        run: |
+          set -euo pipefail
+          version=$(php -r 'echo json_decode(file_get_contents("composer.json"), true)["version"] ?? "";')
+          if [ -z "$version" ] && [ -f VERSION ]; then
+            version=$(cat VERSION | tr -d '[:space:]')
+          fi
+          # Strict semver X.Y.Z — rejects any string containing shell metacharacters
+          if ! echo "$version" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "::error::Invalid or missing version: '$version'. Must be semver (e.g. 1.2.3)."
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Check if tag exists
+        id: check
+        env:
+          VERSION: ${{ steps.read.outputs.version }}
+        run: |
+          if git rev-parse "$VERSION" >/dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create tag
+        if: steps.check.outputs.exists == 'false'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.read.outputs.version }}
+        run: |
+          git config user.name "${GITHUB_ACTOR}"
+          git config user.email "${GITHUB_ACTOR}@users.noreply.github.com"
+          git tag "$VERSION"
+          git push "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" "$VERSION"
+
+      - name: Create GitHub Release
+        if: steps.check.outputs.exists == 'false'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.read.outputs.version }}
+        run: |
+          gh release create "$VERSION" \
+            --repo "${GITHUB_REPOSITORY}" \
+            --title "$VERSION" \
+            --generate-notes
+
+  # ─────────────────────────────────────────────
+  # Beta pre-release — triggered by push to develop
+  # Tag format: {version}-beta.{run_number}
+  # e.g. 0.3.93-beta.42
+  # ─────────────────────────────────────────────
+  release-beta:
+    # Only run when security passed AND the push was to develop
+    if: |
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.head_branch == 'develop'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+        with:
+          # Check out the exact commit that security.yml scanned
+          ref: ${{ github.event.workflow_run.head_sha }}
+          fetch-depth: 0
+          fetch-tags: true
+          persist-credentials: false
+
+      - name: Read base version from composer.json or VERSION
+        id: read
+        run: |
+          set -euo pipefail
+          version=$(php -r 'echo json_decode(file_get_contents("composer.json"), true)["version"] ?? "";')
+          if [ -z "$version" ] && [ -f VERSION ]; then
+            version=$(cat VERSION | tr -d '[:space:]')
+          fi
+          # Strict semver X.Y.Z — rejects any string containing shell metacharacters
+          if ! echo "$version" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "::error::Invalid or missing version: '$version'. Must be semver (e.g. 1.2.3)."
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Build beta tag
+        id: beta
+        env:
+          VERSION: ${{ steps.read.outputs.version }}
+        run: |
+          echo "tag=${VERSION}-beta.${{ github.run_number }}" >> "$GITHUB_OUTPUT"
+
+      - name: Create beta tag
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          BETA_TAG: ${{ steps.beta.outputs.tag }}
+        run: |
+          git config user.name "${GITHUB_ACTOR}"
+          git config user.email "${GITHUB_ACTOR}@users.noreply.github.com"
+          git tag "$BETA_TAG"
+          git push "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" "$BETA_TAG"
+
+      - name: Create GitHub Pre-Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BETA_TAG: ${{ steps.beta.outputs.tag }}
+        run: |
+          gh release create "$BETA_TAG" \
+            --repo "${GITHUB_REPOSITORY}" \
+            --title "$BETA_TAG" \
+            --generate-notes \
+            --prerelease
