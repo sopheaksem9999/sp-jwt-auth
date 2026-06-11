@@ -1,10 +1,10 @@
 name: Release
 
-# Runs only after the Security workflow completes on main or develop.
-# If any security check failed, both release jobs are skipped automatically.
+# Runs only after CI completes on main or develop.
+# Each release job also verifies Security passed for the exact same commit.
 on:
   workflow_run:
-    workflows: ["Security"]
+    workflows: ["CI"]
     types:
       - completed
     branches:
@@ -13,6 +13,7 @@ on:
 
 permissions:
   contents: read
+  actions: read
 
 concurrency:
   group: release-${{ github.event.workflow_run.head_branch }}
@@ -24,29 +25,68 @@ jobs:
   # Stable release — triggered by push to main
   # ─────────────────────────────────────────────
   release-stable:
-    # Only run when security passed AND the push was to main
+    # Only run when CI passed for a push to main.
     if: |
       github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push' &&
       github.event.workflow_run.head_branch == 'main'
     runs-on: ubuntu-latest
     permissions:
+      actions: read
       contents: write
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
         with:
-          # Check out the exact commit that security.yml scanned
+          # Check out the exact commit that CI scanned.
           ref: ${{ github.event.workflow_run.head_sha }}
           fetch-depth: 0
           fetch-tags: true
           persist-credentials: false
 
-      - name: Read version from composer.json or VERSION
+      - name: Verify Security passed for this commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+          HEAD_BRANCH: ${{ github.event.workflow_run.head_branch }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          set -euo pipefail
+          for attempt in $(seq 1 30); do
+            result=$(gh run list \
+              --repo "${GITHUB_REPOSITORY}" \
+              --workflow security.yml \
+              --branch "${HEAD_BRANCH}" \
+              --commit "${HEAD_SHA}" \
+              --limit 1 \
+              --json status,conclusion \
+              --jq '.[0] // empty | "\(.status) \(.conclusion)"')
+
+            if [ "${result}" = "completed success" ]; then
+              echo "Security passed for ${HEAD_SHA}."
+              exit 0
+            fi
+
+            if echo "${result}" | grep -q '^completed '; then
+              echo "::error::Security did not pass for ${HEAD_SHA}: ${result}"
+              exit 1
+            fi
+
+            echo "Waiting for Security for ${HEAD_SHA}; attempt ${attempt}/30."
+            sleep 10
+          done
+
+          echo "::error::Security did not complete for ${HEAD_SHA}."
+          exit 1
+
+      - name: Read version from VERSION or composer.json
         id: read
         run: |
           set -euo pipefail
-          version=$(php -r 'echo json_decode(file_get_contents("composer.json"), true)["version"] ?? "";')
-          if [ -z "$version" ] && [ -f VERSION ]; then
+          version=""
+          if [ -f VERSION ]; then
             version=$(cat VERSION | tr -d '[:space:]')
+          fi
+          if [ -z "$version" ]; then
+            version=$(php -r 'echo json_decode(file_get_contents("composer.json"), true)["version"] ?? "";')
           fi
           # Strict semver X.Y.Z — rejects any string containing shell metacharacters
           if ! echo "$version" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
@@ -94,29 +134,68 @@ jobs:
   # e.g. 0.3.93-beta.42
   # ─────────────────────────────────────────────
   release-beta:
-    # Only run when security passed AND the push was to develop
+    # Only run when CI passed for a push to develop.
     if: |
       github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push' &&
       github.event.workflow_run.head_branch == 'develop'
     runs-on: ubuntu-latest
     permissions:
+      actions: read
       contents: write
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
         with:
-          # Check out the exact commit that security.yml scanned
+          # Check out the exact commit that CI scanned.
           ref: ${{ github.event.workflow_run.head_sha }}
           fetch-depth: 0
           fetch-tags: true
           persist-credentials: false
 
-      - name: Read base version from composer.json or VERSION
+      - name: Verify Security passed for this commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+          HEAD_BRANCH: ${{ github.event.workflow_run.head_branch }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          set -euo pipefail
+          for attempt in $(seq 1 30); do
+            result=$(gh run list \
+              --repo "${GITHUB_REPOSITORY}" \
+              --workflow security.yml \
+              --branch "${HEAD_BRANCH}" \
+              --commit "${HEAD_SHA}" \
+              --limit 1 \
+              --json status,conclusion \
+              --jq '.[0] // empty | "\(.status) \(.conclusion)"')
+
+            if [ "${result}" = "completed success" ]; then
+              echo "Security passed for ${HEAD_SHA}."
+              exit 0
+            fi
+
+            if echo "${result}" | grep -q '^completed '; then
+              echo "::error::Security did not pass for ${HEAD_SHA}: ${result}"
+              exit 1
+            fi
+
+            echo "Waiting for Security for ${HEAD_SHA}; attempt ${attempt}/30."
+            sleep 10
+          done
+
+          echo "::error::Security did not complete for ${HEAD_SHA}."
+          exit 1
+
+      - name: Read base version from VERSION or composer.json
         id: read
         run: |
           set -euo pipefail
-          version=$(php -r 'echo json_decode(file_get_contents("composer.json"), true)["version"] ?? "";')
-          if [ -z "$version" ] && [ -f VERSION ]; then
+          version=""
+          if [ -f VERSION ]; then
             version=$(cat VERSION | tr -d '[:space:]')
+          fi
+          if [ -z "$version" ]; then
+            version=$(php -r 'echo json_decode(file_get_contents("composer.json"), true)["version"] ?? "";')
           fi
           # Strict semver X.Y.Z — rejects any string containing shell metacharacters
           if ! echo "$version" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
@@ -132,7 +211,19 @@ jobs:
         run: |
           echo "tag=${VERSION}-beta.${{ github.run_number }}" >> "$GITHUB_OUTPUT"
 
+      - name: Check if beta tag exists
+        id: check
+        env:
+          BETA_TAG: ${{ steps.beta.outputs.tag }}
+        run: |
+          if git rev-parse "$BETA_TAG" >/dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Create beta tag
+        if: steps.check.outputs.exists == 'false'
         env:
           GITHUB_TOKEN: ${{ github.token }}
           BETA_TAG: ${{ steps.beta.outputs.tag }}
@@ -143,6 +234,7 @@ jobs:
           git push "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" "$BETA_TAG"
 
       - name: Create GitHub Pre-Release
+        if: steps.check.outputs.exists == 'false'
         env:
           GH_TOKEN: ${{ github.token }}
           BETA_TAG: ${{ steps.beta.outputs.tag }}

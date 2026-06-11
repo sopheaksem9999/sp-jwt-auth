@@ -1,1 +1,5 @@
+<<<<<<< HEAD
 0.1.16
+=======
+0.1.0
+>>>>>>> 60608a3 (refactor: rename sp-laravel-api to sp-jwt-auth)

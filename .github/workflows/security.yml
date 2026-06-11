@@ -2,7 +2,13 @@ name: Security
 
 on:
   push:
+    branches:
+      - main
+      - develop
   pull_request:
+    branches:
+      - main
+      - develop
 
 permissions:
   contents: read
@@ -30,33 +36,29 @@ jobs:
 
   # ─────────────────────────────────────────────────────────────────────────────
   # 2. Dependency vulnerability check — finds CVEs in composer packages
-  #    Tool: local-php-security-checker (by Symfony/fabpot, free)
-  #    Catches: known CVEs in packages listed in composer.lock
+  #    Tool: Composer audit
+  #    Catches: known CVEs in resolved Composer dependencies
   # ─────────────────────────────────────────────────────────────────────────────
   scan-dependencies:
-    name: Dependency CVE Check (composer.lock)
+    name: Dependency CVE Check (composer audit)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
         with:
           persist-credentials: false
 
-      - name: Run PHP security checker
-        # hashFiles() returns empty string when the file does not exist —
-        # skips this step entirely instead of failing with a misleading error.
-        if: hashFiles('composer.lock') != ''
-        run: |
-          set -euo pipefail
-          curl -fsSL https://github.com/fabpot/local-php-security-checker/releases/download/v2.0.6/local-php-security-checker_2.0.6_linux_amd64 \
-            -o /usr/local/bin/security-checker
-          chmod +x /usr/local/bin/security-checker
-          security-checker security:check composer.lock
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          coverage: none
+          tools: composer:v2
 
-      - name: No composer.lock found
-        if: hashFiles('composer.lock') == ''
-        run: |
-          echo "::warning::composer.lock not found — CVE dependency scan skipped."
-          echo "Commit composer.lock to your repository to enable this check."
+      - name: Resolve dependency graph
+        run: composer update --prefer-dist --no-interaction --no-progress --no-scripts
+
+      - name: Run Composer audit
+        run: composer audit --locked --no-interaction --format=plain
 
   # ─────────────────────────────────────────────────────────────────────────────
   # 3. Static Application Security Testing (SAST) for PHP
