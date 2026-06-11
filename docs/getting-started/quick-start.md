@@ -16,7 +16,7 @@ php artisan migrate
 ## 2. Generate Keys
 
 ```bash
-php artisan sp-jwt-auth:keys --generate --kid=2026-06-primary --pem --env
+php artisan sp-jwt-auth:keys --generate --kid=2026-06-primary --pem --write-env
 ```
 
 Then add the key to `config/sp-jwt-auth.php` under `keys.items`:

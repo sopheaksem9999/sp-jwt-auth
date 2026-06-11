@@ -14,7 +14,7 @@ php artisan migrate
 ## Generate Signing Keys
 
 ```bash
-php artisan sp-jwt-auth:keys --generate --kid=2026-06-primary --pem --env
+php artisan sp-jwt-auth:keys --generate --kid=2026-06-primary --pem --write-env
 ```
 
 This creates `storage/jwt-private-2026-06-primary.pem` and `storage/jwt-public-2026-06-primary.pem`, then writes `SP_JWT_ACTIVE_KID` to `.env`.
