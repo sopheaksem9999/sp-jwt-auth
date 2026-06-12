@@ -72,6 +72,8 @@ description: "Key classes, contracts, DTOs, middleware, and events in sopheak/sp
 | Command | Description |
 |---|---|
 | `sp-jwt-auth:install` | Publish config, migrations, and optionally generate keys |
+| `sp-jwt-auth:setup` | Publish client scaffolding, patch the API guard when safe, and optionally generate keys |
+| `sp-jwt-auth:validate` | Validate client app guard, provider, key, hash key, and JWKS setup |
 | `sp-jwt-auth:keys` | Generate, rotate, retire, or revoke signing keys |
 | `sp-jwt-auth:jwks` | Print or export JWKS public key payload |
 | `sp-jwt-auth:prune` | Delete expired or revoked token rows |

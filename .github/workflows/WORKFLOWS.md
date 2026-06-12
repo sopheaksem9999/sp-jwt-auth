@@ -1,45 +1,20 @@
 # GitHub Actions Workflows
 
-Three workflows guard every push and pull request to `main` and `develop`.
-**CI and Security must both pass before Release is allowed to tag.**
+Two workflows guard every push to `main` and `develop`.
+**Security must pass before Release is allowed to run.**
 
 ```
 push to main / develop
         │
         ▼
- ┌─────────────┐       ┌─────────────┐
- │   CI        │       │  Security   │
- │ main.yml    │       │ security.yml│
- └──────┬──────┘       └──────┬──────┘
-        │ CI passed?          │ Security passed?
-        └──────────────┬──────┘
-                       ▼
-               release.yml tags
+ ┌─────────────┐
+ │  security   │  ← runs first, always
+ │  .yml       │
+ └──────┬──────┘
+        │ all jobs passed?
+        │ yes ──────────────────► release.yml runs
+        │ no  ──────────────────► release.yml never starts
 ```
-
----
-
-## main.yml
-
-**Trigger:** every `push` and `pull_request` to `main` or `develop`
-**Permission:** `contents: read`
-
-Runs the package quality gate on supported PHP versions.
-
-### Jobs
-
-#### `quality` — PHP quality gate
-
-Matrix:
-
-- PHP 8.3
-- PHP 8.4
-
-Steps:
-
-1. Validates `composer.json`.
-2. Resolves dependencies with Composer.
-3. Runs `composer quality`, which includes Rector dry-run, PHPStan, and PHPUnit.
 
 ---
 
@@ -68,15 +43,17 @@ Scans the full git history of the push for accidentally committed credentials.
 
 ---
 
-#### `scan-dependencies` — Dependency CVE Check (composer audit)
+#### `scan-dependencies` — Dependency CVE Check (composer.lock)
 
-Resolves Composer dependencies in CI and runs Composer's audit command.
+Checks every package version in `composer.lock` against the PHP Security Advisories database.
 
-- The repo can keep ignoring `composer.lock` as a library package.
-- The workflow still audits the resolved dependency graph.
+- If `composer.lock` is present → runs the check and fails on any known CVE.
+- If `composer.lock` is absent → emits a warning and skips (does not fail the build).
 
-**Tool:** `composer audit`
-**Setup required:** none.
+**Tool:** [local-php-security-checker v2.0.6](https://github.com/fabpot/local-php-security-checker) by Symfony
+**Setup required:** none — binary is downloaded at runtime.
+
+> **Recommendation:** commit `composer.lock` to the repository so this check is always active.
 
 ---
 
@@ -119,24 +96,22 @@ Inspects committed files for patterns associated with PHP webshells and maliciou
 
 ## release.yml
 
-**Trigger:** `workflow_run` — fires after the CI workflow completes on `main` or `develop`
-**Permission:** `contents: write` and `actions: read`
+**Trigger:** `workflow_run` — fires only after the Security workflow completes
+**Permission:** `contents: write` (needed to create tags and GitHub Releases)
 
 Release jobs are skipped entirely if:
-- CI failed or was cancelled (`conclusion != 'success'`),
-- The workflow event was not a `push`,
-- The branch is not `main` or `develop`, or
-- Security did not pass for the exact same commit.
+- The Security workflow failed or was cancelled (`conclusion != 'success'`), or
+- The branch is not `main` or `develop`.
 
-The checkout always uses `head_sha` from the CI run. Release then queries GitHub Actions to verify the Security workflow also passed for that same SHA, preventing a race condition where a different commit could be tagged.
+The checkout always uses `head_sha` from the Security run — the exact commit that was scanned — preventing a race condition where a new commit could sneak in between the two workflows.
 
 ### Jobs
 
 #### `release-stable`
 
-Runs when CI passed on `main` and Security also passed for the same commit.
+Runs when Security passed on `main`.
 
-1. Reads the version from `VERSION` or falls back to `composer.json` (`version` field).
+1. Reads the version from `composer.json` (`version` field) or falls back to a `VERSION` file.
 2. Validates strict semver format `X.Y.Z` — rejects any string with shell metacharacters.
 3. Skips silently if the tag already exists (idempotent).
 4. Creates a git tag and pushes it.
@@ -146,7 +121,7 @@ Runs when CI passed on `main` and Security also passed for the same commit.
 
 #### `release-beta`
 
-Runs when CI passed on `develop` and Security also passed for the same commit.
+Runs when Security passed on `develop`.
 
 Same version-reading and validation steps as stable, then:
 
@@ -172,7 +147,7 @@ These settings are configured in **Settings → Code security** and **Settings �
 | Setting | Location | Why |
 |---|---|---|
 | **Secret scanning** (GitHub native) | Settings → Code security | Runs in parallel with gitleaks as a second layer |
-| **Dependabot alerts** | Settings → Code security | Alerts you when a new CVE affects the package dependency graph |
-| **Branch protection on `main`** | Settings → Branches | Require CI and Security workflows to pass before any merge is allowed |
+| **Dependabot alerts** | Settings → Code security | Alerts you when a new CVE affects a package in `composer.lock` |
+| **Branch protection on `main`** | Settings → Branches | Require Security workflow to pass before any merge is allowed |
 | **Branch protection on `develop`** | Settings → Branches | Same as above for develop |
 | **Require pull request reviews** | Settings → Branches | No direct push to `main` or `develop` without a review |

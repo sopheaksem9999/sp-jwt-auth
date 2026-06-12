@@ -6,6 +6,7 @@ namespace Sopheak\JwtAuth\Console;
 
 use Illuminate\Console\Command;
 use Illuminate\Support\Str;
+use Sopheak\JwtAuth\Support\EnvFile;
 
 final class KeysCommand extends Command
 {
@@ -67,26 +68,17 @@ final class KeysCommand extends Command
 
             if ($this->option('write-env')) {
                 $envPath = base_path('.env');
-                $line = sprintf("SP_JWT_ACTIVE_KID=%s", $kid);
+                $envValues = [
+                    'SP_JWT_ACTIVE_KID' => $kid,
+                    'SP_JWT_PRIVATE_KEY_PATH' => $this->relativePath($privateKeyPath),
+                    'SP_JWT_PUBLIC_KEY_PATH' => $this->relativePath($publicKeyPath),
+                ];
 
-                if (file_exists($envPath)) {
-                    $contents = file_get_contents($envPath);
-                    if (str_contains($contents, 'SP_JWT_ACTIVE_KID=')) {
-                        $updated = preg_replace(
-                            '/^SP_JWT_ACTIVE_KID=.*$/m',
-                            $line,
-                            $contents,
-                        );
-                        file_put_contents($envPath, $updated);
-                        $this->line(sprintf('Updated SP_JWT_ACTIVE_KID in %s', $envPath));
-                    } else {
-                        file_put_contents($envPath, $contents . PHP_EOL . $line . PHP_EOL);
-                        $this->line(sprintf('Appended SP_JWT_ACTIVE_KID to %s', $envPath));
-                    }
-                } else {
-                    $this->warn('No .env file found at project root. Set manually:');
-                    $this->line($line);
+                foreach ($envValues as $key => $value) {
+                    EnvFile::put($envPath, $key, $value);
                 }
+
+                $this->line(sprintf('Updated JWT key environment values in %s', $envPath));
             } else {
                 $this->line(sprintf('Set SP_JWT_ACTIVE_KID=%s in your .env', $kid));
             }

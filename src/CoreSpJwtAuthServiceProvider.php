@@ -16,6 +16,8 @@ use Sopheak\JwtAuth\Console\InstallCommand;
 use Sopheak\JwtAuth\Console\JwksCommand;
 use Sopheak\JwtAuth\Console\KeysCommand;
 use Sopheak\JwtAuth\Console\PruneCommand;
+use Sopheak\JwtAuth\Console\SetupCommand;
+use Sopheak\JwtAuth\Console\ValidateCommand;
 use Sopheak\JwtAuth\Http\Middleware\AuthenticateOAuthToken;
 use Sopheak\JwtAuth\Http\Middleware\AuthenticateApiKey;
 use Sopheak\JwtAuth\Http\Middleware\AuthenticateJwt;
@@ -118,6 +120,8 @@ final class CoreSpJwtAuthServiceProvider extends ServiceProvider
         if ($this->app->runningInConsole()) {
             $this->commands([
                 InstallCommand::class,
+                SetupCommand::class,
+                ValidateCommand::class,
                 KeysCommand::class,
                 JwksCommand::class,
                 PruneCommand::class,

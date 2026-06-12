@@ -25,7 +25,13 @@ return [
         'jwks_enabled' => filter_var(env('SP_JWT_JWKS_ENABLED', true), FILTER_VALIDATE_BOOL),
         'jwks_route' => env('SP_JWT_JWKS_ROUTE', '/.well-known/sp-jwt-auth/jwks.json'),
         'rotation_grace_days' => (int) env('SP_JWT_KEY_ROTATION_GRACE_DAYS', 30),
-        'items' => [],
+        'items' => array_filter([
+            env('SP_JWT_ACTIVE_KID', env('SP_JWT_KEY_ID')) => [
+                'state' => 'active',
+                'private_key_path' => env('SP_JWT_PRIVATE_KEY_PATH') ? base_path((string) env('SP_JWT_PRIVATE_KEY_PATH')) : null,
+                'public_key_path' => env('SP_JWT_PUBLIC_KEY_PATH') ? base_path((string) env('SP_JWT_PUBLIC_KEY_PATH')) : null,
+            ],
+        ], static fn (string|int $key): bool => (string) $key !== '', ARRAY_FILTER_USE_KEY),
     ],
 
     'hash_keys' => [

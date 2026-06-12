@@ -30,13 +30,31 @@ Optional integrations are kept in Composer `suggest`:
 
 ## Installation
 
-```bash
-composer require sopheak/sp-jwt-auth
-php artisan sp-jwt-auth:install --keys
-php artisan migrate
+This package is installed from a private Git repository. In the client application's `composer.json`, manually add a VCS repository entry:
+
+```json
+{
+  "repositories": [
+    {
+      "type": "vcs",
+      "url": "https://github.com/<org>/<repo>.git"
+    }
+  ]
+}
 ```
 
-Configure the Laravel API guard:
+Then require a tagged version. If Composer or Git asks for authentication, use your GitHub username and a personal access token with read access to this repository:
+
+```bash
+composer require sopheak/sp-jwt-auth:^0.1
+php artisan sp-jwt-auth:setup --keys
+php artisan migrate
+php artisan sp-jwt-auth:validate
+```
+
+Do not commit tokens into `composer.json`; Composer can store credentials in `auth.json` after the prompt.
+
+The setup command publishes config and migrations, attempts to add the Laravel `api` guard, generates local PEM signing keys with `--keys`, and writes the related JWT key paths and refresh hash secret to `.env`. If your `config/auth.php` is custom, add the guard manually:
 
 ```php
 'guards' => [
@@ -48,6 +66,13 @@ Configure the Laravel API guard:
 ```
 
 Keep Laravel's normal `web` guard for Blade, Livewire, Inertia, and session pages.
+
+For local path testing before a release tag exists:
+
+```bash
+composer config repositories.sp-jwt-auth '{"type":"path","url":"/absolute/path/to/sp-jwt-auth","options":{"versions":{"sopheak/sp-jwt-auth":"0.1.0"}}}'
+composer require sopheak/sp-jwt-auth:^0.1
+```
 
 ## Configuration
 
@@ -69,6 +94,8 @@ SP_JWT_ACCESS_TTL_MINUTES=15
 SP_JWT_REFRESH_TTL_DAYS=60
 SP_JWT_REUSE_DETECTION=revoke_session
 SP_JWT_ACTIVE_KID=2026-06-primary
+SP_JWT_PRIVATE_KEY_PATH=storage/jwt-private-2026-06-primary.pem
+SP_JWT_PUBLIC_KEY_PATH=storage/jwt-public-2026-06-primary.pem
 SP_JWT_HASH_KEY_ID=default
 SP_JWT_REFRESH_HASH_KEY=change-me-to-a-long-random-secret
 ```
@@ -285,6 +312,8 @@ OAuth client-credentials tokens authenticate as clients, not users.
 
 ```bash
 php artisan sp-jwt-auth:install --keys
+php artisan sp-jwt-auth:setup --keys
+php artisan sp-jwt-auth:validate
 php artisan sp-jwt-auth:keys --generate --kid=2026-06-primary
 php artisan sp-jwt-auth:jwks --pretty
 php artisan sp-jwt-auth:prune --expired-days=30 --revoked-days=30

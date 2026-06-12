@@ -5,10 +5,33 @@ description: "Install and configure sopheak/sp-jwt-auth in a Laravel app."
 
 # Installation
 
+This package is installed from a private Git repository. In the host Laravel application's `composer.json`, manually add a VCS repository entry:
+
+```json
+{
+  "repositories": [
+    {
+      "type": "vcs",
+      "url": "https://github.com/<org>/<repo>.git"
+    }
+  ]
+}
+```
+
+If Composer or Git asks for authentication, use your GitHub username and a personal access token with read access to this repository. Do not put access tokens directly in `composer.json`; Composer can store credentials in `auth.json` after the prompt.
+
 ```bash
-composer require sopheak/sp-jwt-auth
-php artisan sp-jwt-auth:install
+composer require sopheak/sp-jwt-auth:^0.1
+php artisan sp-jwt-auth:setup --keys
 php artisan migrate
+php artisan sp-jwt-auth:validate
+```
+
+For local path testing before a Git tag exists:
+
+```bash
+composer config repositories.sp-jwt-auth '{"type":"path","url":"/absolute/path/to/sp-jwt-auth","options":{"versions":{"sopheak/sp-jwt-auth":"0.1.0"}}}'
+composer require sopheak/sp-jwt-auth:^0.1
 ```
 
 ## Generate Signing Keys
@@ -17,11 +40,11 @@ php artisan migrate
 php artisan sp-jwt-auth:keys --generate --kid=2026-06-primary --pem --write-env
 ```
 
-This creates `storage/jwt-private-2026-06-primary.pem` and `storage/jwt-public-2026-06-primary.pem`, then writes `SP_JWT_ACTIVE_KID` to `.env`.
+This creates `storage/jwt-private-2026-06-primary.pem` and `storage/jwt-public-2026-06-primary.pem`, then writes `SP_JWT_ACTIVE_KID`, `SP_JWT_PRIVATE_KEY_PATH`, and `SP_JWT_PUBLIC_KEY_PATH` to `.env`.
 
 ## Configure the API Guard
 
-Keep the normal `web` guard for Blade, Livewire, Inertia, and session pages. Use `sp-jwt` for API routes.
+`sp-jwt-auth:setup` attempts to add this automatically. If your auth config is custom, add it manually. Keep the normal `web` guard for Blade, Livewire, Inertia, and session pages. Use `sp-jwt` for API routes.
 
 ```php
 'guards' => [
@@ -34,20 +57,16 @@ Keep the normal `web` guard for Blade, Livewire, Inertia, and session pages. Use
 
 ## Register the Key in Config
 
-Add the generated key to `config/sp-jwt-auth.php` under `keys.items`:
+The default published config reads generated key paths from `.env`:
 
-```php
-'keys' => [
-    'active_kid' => env('SP_JWT_ACTIVE_KID'),
-    'items' => [
-        '2026-06-primary' => [
-            'state' => 'active',
-            'private_key_path' => base_path('storage/jwt-private-2026-06-primary.pem'),
-            'public_key_path' => base_path('storage/jwt-public-2026-06-primary.pem'),
-        ],
-    ],
-],
+```env
+SP_JWT_ACTIVE_KID=2026-06-primary
+SP_JWT_PRIVATE_KEY_PATH=storage/jwt-private-2026-06-primary.pem
+SP_JWT_PUBLIC_KEY_PATH=storage/jwt-public-2026-06-primary.pem
+SP_JWT_REFRESH_HASH_KEY=change-me-to-a-long-random-secret
 ```
+
+For custom key storage, replace `keys.items` in `config/sp-jwt-auth.php` with explicit inline keys or paths.
 
 ## Publish Config (Optional)
 
@@ -59,6 +78,8 @@ php artisan vendor:publish --tag=sp-jwt-auth-config
 
 ```env
 SP_JWT_ACTIVE_KID=2026-06-primary
+SP_JWT_PRIVATE_KEY_PATH=storage/jwt-private-2026-06-primary.pem
+SP_JWT_PUBLIC_KEY_PATH=storage/jwt-public-2026-06-primary.pem
 SP_JWT_ISSUER=https://your-app.test
 SP_JWT_ACCESS_TTL_MINUTES=15
 SP_JWT_REFRESH_TTL_DAYS=30
