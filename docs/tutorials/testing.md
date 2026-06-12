@@ -58,6 +58,28 @@ public function test_protected_route_with_token(): void
 }
 ```
 
+Claims and tenant/company context work the same way in tests:
+
+```php
+public function test_company_route_with_token_claims(): void
+{
+    $pair = $this->jwt->issueTokenPair(
+        $this->user,
+        TokenContext::make()
+            ->subject('company', '42')
+            ->scopes(['invoices.read'])
+            ->claims(['company_id' => 42]),
+    );
+
+    $response = $this->withToken($pair->accessToken)
+        ->getJson('/api/invoices');
+
+    $response->assertOk();
+}
+```
+
+`JwtTokenService::issueTokenPair()` persists access and refresh token rows, so tests still need the package token tables. A dedicated `JwtTokenTestHelper` is not part of the current API; use package migrations plus `issueTokenPair()` for now.
+
 ## Test Login Endpoint
 
 ```php

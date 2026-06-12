@@ -129,6 +129,23 @@ $pair = app(JwtTokenService::class)->issueTokenPair(
 return TokenResponse::passportCompatible($pair);
 ```
 
+Read claims from the authenticated token:
+
+```php
+$token = $request->user()?->token();
+
+$companyId = $token?->claim('company_id');
+$claims = $token?->claims ?? [];
+```
+
+For response fields owned by the app, pass extra data to the response helper:
+
+```php
+return TokenResponse::passportCompatible($pair, [
+    'company_id' => $pair->accessTokenRecord->claim('company_id'),
+]);
+```
+
 Protect routes with Laravel auth middleware:
 
 ```php

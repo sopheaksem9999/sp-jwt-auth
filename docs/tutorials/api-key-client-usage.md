@@ -5,7 +5,7 @@ description: "Create and use scoped API keys for third-party integrations."
 
 # API Key Client Usage
 
-API keys are for machine clients and third-party integrations that do not use first-party user sessions.
+API keys are for machine clients, background jobs, and third-party integrations that do not use first-party user sessions. They are a good fit for service-to-service workers such as ERP or QuickBooks sync jobs that need package-level authentication to your API.
 
 ## Server-Side: Create a Key
 
@@ -14,11 +14,11 @@ use Sopheak\JwtAuth\DTO\ApiKeyContext;
 use Sopheak\JwtAuth\Services\ApiKeyService;
 
 $result = app(ApiKeyService::class)->createApiKey(new ApiKeyContext(
-    ownerType: 'tenant',
+    ownerType: 'company',
     ownerId: '42',
-    name: 'ERP sync integration',
-    scopes: ['invoices.write', 'invoices.read'],
-    claims: ['tenant_id' => 42],
+    name: 'QuickBooks sync worker',
+    scopes: ['qbo.sync', 'invoices.read', 'invoices.write'],
+    claims: ['company_id' => 42],
     allowedIps: ['203.0.113.0/24'],
 ));
 
@@ -43,6 +43,9 @@ curl -X POST https://api.example.com/integrations/invoices \
 ```php
 Route::middleware(['sp.api_key', 'sp.api_key.scope:invoices.write'])
     ->post('/integrations/invoices', IntegrationInvoiceController::class);
+
+Route::middleware(['sp.api_key', 'sp.api_key.scope:qbo.sync'])
+    ->post('/integrations/qbo/sync', QboSyncController::class);
 ```
 
 Available middleware:
@@ -58,11 +61,13 @@ Available middleware:
 ```php
 $principal = $request->attributes->get('sp_api_key_principal');
 
-$principal->ownerType;   // 'tenant'
+$principal->ownerType;   // 'company'
 $principal->ownerId;     // '42'
-$principal->scopes;      // ['invoices.write', 'invoices.read']
-$principal->claims;      // ['tenant_id' => 42]
+$principal->scopes;      // ['qbo.sync', 'invoices.write', 'invoices.read']
+$principal->claims;      // ['company_id' => 42]
 ```
+
+Use the owner fields for the entity that owns the integration key. Use claims for request-time context that middleware and controllers need to read.
 
 ## Rotate and Revoke
 

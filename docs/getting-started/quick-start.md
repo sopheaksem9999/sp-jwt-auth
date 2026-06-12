@@ -8,27 +8,24 @@ description: "Issue your first JWT token pair and protect an API route."
 ## 1. Install
 
 ```bash
-composer require sopheak/sp-jwt-auth
-php artisan sp-jwt-auth:install
+composer require sopheak/sp-jwt-auth:^0.1
+php artisan sp-jwt-auth:setup --keys
 php artisan migrate
+php artisan sp-jwt-auth:validate
 ```
 
-## 2. Generate Keys
+## 2. Generate or Rotate Keys
 
 ```bash
 php artisan sp-jwt-auth:keys --generate --kid=2026-06-primary --pem --write-env
 ```
 
-Then add the key to `config/sp-jwt-auth.php` under `keys.items`:
+Use this when you skipped `sp-jwt-auth:setup --keys` or when you need to rotate to a named key id. The default published config reads generated key paths from `.env`:
 
-```php
-'items' => [
-    '2026-06-primary' => [
-        'state' => 'active',
-        'private_key_path' => base_path('storage/jwt-private-2026-06-primary.pem'),
-        'public_key_path' => base_path('storage/jwt-public-2026-06-primary.pem'),
-    ],
-],
+```env
+SP_JWT_ACTIVE_KID=2026-06-primary
+SP_JWT_PRIVATE_KEY_PATH=storage/jwt-private-2026-06-primary.pem
+SP_JWT_PUBLIC_KEY_PATH=storage/jwt-public-2026-06-primary.pem
 ```
 
 ## 3. Configure Guard
