@@ -63,6 +63,45 @@ final readonly class TokenContext
         return $this->claims(array_merge($this->claims, [$key => $value]));
     }
 
+    public function claim(string $key, mixed $value): self
+    {
+        return $this->replaceClaim($key, $value);
+    }
+
+    public function companyId(int|string $companyId): self
+    {
+        return $this
+            ->subject('company', (string) $companyId)
+            ->replaceClaim('company_id', $companyId);
+    }
+
+    public function companyIds(array $companyIds): self
+    {
+        return $this->replaceClaim('company_ids', array_values($companyIds));
+    }
+
+    public function tenantId(int|string $tenantId): self
+    {
+        return $this
+            ->subject('tenant', (string) $tenantId)
+            ->replaceClaim('tenant_id', $tenantId);
+    }
+
+    public function tenantIds(array $tenantIds): self
+    {
+        return $this->replaceClaim('tenant_ids', array_values($tenantIds));
+    }
+
+    public function impersonated(bool $value = true): self
+    {
+        return $this->replaceClaim('impersonated', $value);
+    }
+
+    public function metadata(array $metadata): self
+    {
+        return new self($this->scopes, $this->claims, $this->subjectType, $this->subjectId, $this->audience, $this->deviceId, $this->deviceName, $this->sessionId, $metadata);
+    }
+
     public function subject(string $type, string $id): self
     {
         return new self($this->scopes, $this->claims, $type, $id, $this->audience, $this->deviceId, $this->deviceName, $this->sessionId, $this->metadata);

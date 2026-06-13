@@ -20,4 +20,27 @@ final readonly class ApiKeyContext
         public ?string $createdById = null,
     ) {
     }
+
+    public static function forCompany(
+        int|string $companyId,
+        string $name,
+        array $scopes = [],
+        array $claims = [],
+        ?CarbonInterface $expiresAt = null,
+        ?array $allowedIps = null,
+        ?string $createdByType = null,
+        ?string $createdById = null,
+    ): self {
+        return new self(
+            ownerType: 'company',
+            ownerId: (string) $companyId,
+            name: $name,
+            scopes: $scopes,
+            claims: array_merge($claims, ['company_id' => $companyId]),
+            expiresAt: $expiresAt,
+            allowedIps: $allowedIps,
+            createdByType: $createdByType,
+            createdById: $createdById,
+        );
+    }
 }

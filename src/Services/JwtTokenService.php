@@ -11,6 +11,7 @@ use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Contracts\Auth\Authenticatable;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Str;
@@ -226,14 +227,74 @@ final readonly class JwtTokenService
         Event::dispatch(new SessionRevoked($sessionId));
     }
 
-    public function revokeAllForUser(Authenticatable $user): void
+    public function revokeAllForUser(Authenticatable $user, ?string $exceptSessionId = null): void
     {
         $userType = $user::class;
         $userId = (string) $user->getAuthIdentifier();
 
-        JwtAccessToken::query()->where('user_type', $userType)->where('user_id', $userId)->whereNull('revoked_at')->update(['revoked_at' => now()]);
-        JwtRefreshToken::query()->where('user_type', $userType)->where('user_id', $userId)->whereNull('revoked_at')->update(['revoked_at' => now()]);
+        $accessQuery = JwtAccessToken::query()
+            ->where('user_type', $userType)
+            ->where('user_id', $userId)
+            ->whereNull('revoked_at');
+
+        $refreshQuery = JwtRefreshToken::query()
+            ->where('user_type', $userType)
+            ->where('user_id', $userId)
+            ->whereNull('revoked_at');
+
+        if ($exceptSessionId !== null) {
+            $accessQuery->where('session_id', '!=', $exceptSessionId);
+            $refreshQuery->where('session_id', '!=', $exceptSessionId);
+        }
+
+        $accessQuery->update(['revoked_at' => now()]);
+        $refreshQuery->update(['revoked_at' => now()]);
         Event::dispatch(new AllUserTokensRevoked($user));
+    }
+
+    public function revokeDevice(Authenticatable $user, string $deviceId, ?string $exceptSessionId = null): void
+    {
+        $userType = $user::class;
+        $userId = (string) $user->getAuthIdentifier();
+
+        $sessionIds = JwtAccessToken::query()
+            ->where('user_type', $userType)
+            ->where('user_id', $userId)
+            ->where('device_id', $deviceId)
+            ->when($exceptSessionId !== null, fn ($query) => $query->where('session_id', '!=', $exceptSessionId))
+            ->pluck('session_id')
+            ->all();
+
+        if ($sessionIds === []) {
+            return;
+        }
+
+        JwtAccessToken::query()
+            ->where('user_type', $userType)
+            ->where('user_id', $userId)
+            ->whereIn('session_id', $sessionIds)
+            ->whereNull('revoked_at')
+            ->update(['revoked_at' => now()]);
+
+        JwtRefreshToken::query()
+            ->where('user_type', $userType)
+            ->where('user_id', $userId)
+            ->whereIn('session_id', $sessionIds)
+            ->whereNull('revoked_at')
+            ->update(['revoked_at' => now()]);
+    }
+
+    /** @return Collection<int, JwtAccessToken> */
+    public function activeSessionsForUser(Authenticatable $user): Collection
+    {
+        return JwtAccessToken::query()
+            ->where('user_type', $user::class)
+            ->where('user_id', (string) $user->getAuthIdentifier())
+            ->whereNull('revoked_at')
+            ->where('expires_at', '>', now())
+            ->orderByDesc('last_used_at')
+            ->orderByDesc('created_at')
+            ->get();
     }
 
     /** @return array{0: string, 1: string} */

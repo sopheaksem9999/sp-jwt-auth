@@ -40,6 +40,39 @@ final class JwtAccessToken extends Model
         return ($this->claims ?? [])[$key] ?? $default;
     }
 
+    public function companyId(): int|string|null
+    {
+        $value = $this->claim('company_id');
+
+        return is_int($value) || is_string($value) ? $value : null;
+    }
+
+    public function companyIds(): array
+    {
+        $value = $this->claim('company_ids', []);
+
+        return is_array($value) ? array_values($value) : [];
+    }
+
+    public function tenantId(): int|string|null
+    {
+        $value = $this->claim('tenant_id');
+
+        return is_int($value) || is_string($value) ? $value : null;
+    }
+
+    public function tenantIds(): array
+    {
+        $value = $this->claim('tenant_ids', []);
+
+        return is_array($value) ? array_values($value) : [];
+    }
+
+    public function isImpersonated(): bool
+    {
+        return (bool) $this->claim('impersonated', false);
+    }
+
     public function subject(): ?TokenSubject
     {
         return $this->subject_type !== null && $this->subject_id !== null

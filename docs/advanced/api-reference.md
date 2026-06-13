@@ -52,6 +52,24 @@ description: "Key classes, contracts, DTOs, middleware, and events in sopheak/sp
 | `OAuthAuthorizationRequest` | Validated incoming authorization request |
 | `OAuthConsentContext` | User-approved scopes and remember flag |
 
+## Convenience Helpers
+
+| API | Purpose |
+|---|---|
+| `TokenContext::companyId()` | Set company subject and `company_id` claim |
+| `TokenContext::companyIds()` | Set `company_ids` claim |
+| `TokenContext::tenantId()` | Set tenant subject and `tenant_id` claim |
+| `TokenContext::tenantIds()` | Set `tenant_ids` claim |
+| `TokenContext::impersonated()` | Set impersonation claim |
+| `JwtAccessToken::companyId()` | Read `company_id` claim |
+| `JwtAccessToken::companyIds()` | Read `company_ids` claim |
+| `JwtAccessToken::tenantId()` | Read `tenant_id` claim |
+| `JwtAccessToken::tenantIds()` | Read `tenant_ids` claim |
+| `JwtAccessToken::isImpersonated()` | Read impersonation state |
+| `ApiKeyContext::forCompany()` | Build company-owned API key context |
+| `TokenResponse::extend()` | Register global token response extension |
+| `JwtTokenTestHelper` | Issue test token pairs |
+
 ## Guards and Middleware
 
 | Middleware | Alias | Purpose |
@@ -88,7 +106,7 @@ description: "Key classes, contracts, DTOs, middleware, and events in sopheak/sp
 
 | Class | Description |
 |---|---|
-| `TokenResponse` | `passportCompatible()` helper for Laravel Passport-shaped responses |
+| `TokenResponse` | `passportCompatible()` helper and global response extensions |
 | `HookRegistry` | Register pre-issue validation, pre-issue mutation, and post-issue hooks |
 | `SpJwtAuth` | Package config and key repository accessor facade |
 | `SecretHasher` | HMAC hash/verify for opaque token secrets |

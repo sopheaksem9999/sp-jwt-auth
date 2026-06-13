@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sopheak\JwtAuth\Tests\Feature;
 
 use Sopheak\JwtAuth\DTO\TokenContext;
+use Sopheak\JwtAuth\DTO\TokenPair;
 use Sopheak\JwtAuth\Models\JwtAccessToken;
 use Sopheak\JwtAuth\Services\JwtTokenService;
 use Sopheak\JwtAuth\Support\TokenResponse;
@@ -22,6 +23,30 @@ final class CommandTest extends TestCase
         self::assertArrayHasKey('access_token', $response);
         self::assertArrayHasKey('refresh_token', $response);
         self::assertSame(1, $response['company_id']);
+    }
+
+    public function test_token_response_can_be_extended_globally(): void
+    {
+        TokenResponse::extend(function (array $response, TokenPair $pair): array {
+            $response['company_id'] = $pair->accessTokenRecord->companyId();
+            $response['impersonated'] = $pair->accessTokenRecord->isImpersonated();
+
+            return $response;
+        });
+
+        try {
+            $pair = app(JwtTokenService::class)->issueTokenPair(
+                $this->createUser(),
+                TokenContext::make()->companyId(42)->impersonated(),
+            );
+
+            $response = TokenResponse::passportCompatible($pair);
+
+            self::assertSame(42, $response['company_id']);
+            self::assertTrue($response['impersonated']);
+        } finally {
+            TokenResponse::flushExtensions();
+        }
     }
 
     public function test_prune_command_deletes_old_expired_tokens(): void

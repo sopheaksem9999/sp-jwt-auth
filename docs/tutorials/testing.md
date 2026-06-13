@@ -66,9 +66,8 @@ public function test_company_route_with_token_claims(): void
     $pair = $this->jwt->issueTokenPair(
         $this->user,
         TokenContext::make()
-            ->subject('company', '42')
+            ->companyId(42)
             ->scopes(['invoices.read'])
-            ->claims(['company_id' => 42]),
     );
 
     $response = $this->withToken($pair->accessToken)
@@ -78,7 +77,19 @@ public function test_company_route_with_token_claims(): void
 }
 ```
 
-`JwtTokenService::issueTokenPair()` persists access and refresh token rows, so tests still need the package token tables. A dedicated `JwtTokenTestHelper` is not part of the current API; use package migrations plus `issueTokenPair()` for now.
+`JwtTokenService::issueTokenPair()` persists access and refresh token rows, so tests still need the package token tables. Use `JwtTokenTestHelper` when you want a compact test setup:
+
+```php
+use Sopheak\JwtAuth\Testing\JwtTokenTestHelper;
+
+$pair = JwtTokenTestHelper::createToken(
+    user: $user,
+    scopes: ['client'],
+    claims: ['company_id' => 42],
+    subjectType: 'company',
+    subjectId: '42',
+);
+```
 
 ## Test Login Endpoint
 

@@ -36,6 +36,26 @@ final class ApiKeyTest extends TestCase
         self::assertNotNull(ApiKey::query()->find($result->apiKey->id)->last_used_at);
     }
 
+    public function test_api_key_context_can_be_created_for_company_integrations(): void
+    {
+        config()->set('sp-jwt-auth.api_keys.enabled', true);
+
+        $context = ApiKeyContext::forCompany(
+            companyId: 42,
+            name: 'QuickBooks sync',
+            scopes: ['qbo.sync'],
+            claims: ['environment' => 'production'],
+            allowedIps: ['203.0.113.0/24'],
+        );
+
+        $result = app(ApiKeyService::class)->createApiKey($context);
+
+        self::assertSame('company', $result->apiKey->owner_type);
+        self::assertSame('42', $result->apiKey->owner_id);
+        self::assertSame(['environment' => 'production', 'company_id' => 42], $result->apiKey->claims);
+        self::assertSame(['qbo.sync'], $result->apiKey->scopes);
+    }
+
     public function test_api_key_middleware_authenticates_and_checks_scope(): void
     {
         config()->set('sp-jwt-auth.api_keys.enabled', true);

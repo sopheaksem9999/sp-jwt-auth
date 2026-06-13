@@ -121,9 +121,10 @@ use Sopheak\JwtAuth\Support\TokenResponse;
 $pair = app(JwtTokenService::class)->issueTokenPair(
     $user,
     TokenContext::make()
-        ->subject('tenant', '42')
+        ->companyId(42)
+        ->companyIds([42, 84])
         ->scopes(['invoices.read', 'invoices.write'])
-        ->claims(['tenant_id' => 42]),
+        ->impersonated(false),
 );
 
 return TokenResponse::passportCompatible($pair);
@@ -138,12 +139,19 @@ $companyId = $token?->claim('company_id');
 $claims = $token?->claims ?? [];
 ```
 
-For response fields owned by the app, pass extra data to the response helper:
+For response fields owned by the app, pass extra data to the response helper or register a response extension:
 
 ```php
 return TokenResponse::passportCompatible($pair, [
-    'company_id' => $pair->accessTokenRecord->claim('company_id'),
+    'company_id' => $pair->accessTokenRecord->companyId(),
 ]);
+
+TokenResponse::extend(function (array $response, TokenPair $pair): array {
+    $response['company_id'] = $pair->accessTokenRecord->companyId();
+    $response['impersonated'] = $pair->accessTokenRecord->isImpersonated();
+
+    return $response;
+});
 ```
 
 Protect routes with Laravel auth middleware:
@@ -235,12 +243,10 @@ API keys are for third-party integrations and machine clients. The full plaintex
 use Sopheak\JwtAuth\DTO\ApiKeyContext;
 use Sopheak\JwtAuth\Services\ApiKeyService;
 
-$key = app(ApiKeyService::class)->createApiKey(new ApiKeyContext(
-    ownerType: 'tenant',
-    ownerId: '42',
-    name: 'ERP sync',
-    scopes: ['invoices.write'],
-    claims: ['tenant_id' => 42],
+$key = app(ApiKeyService::class)->createApiKey(ApiKeyContext::forCompany(
+    companyId: 42,
+    name: 'QuickBooks sync worker',
+    scopes: ['qbo.sync', 'invoices.write'],
 ));
 ```
 

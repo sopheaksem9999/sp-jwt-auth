@@ -9,23 +9,20 @@ The package stores subject and claim data in tokens but does not enforce tenant 
 
 ## Token Context with Tenant
 
-Attach tenant or company information when issuing tokens. Use `subject()` for the primary active context and `claims()` for values your middleware/controllers need to read:
+Attach tenant or company information when issuing tokens. Use the built-in company helpers for the primary active context and values your middleware/controllers need to read:
 
 ```php
 $pair = app(JwtTokenService::class)->issueTokenPair(
     $user,
     TokenContext::make()
-        ->subject('company', (string) $activeCompanyId)
+        ->companyId($activeCompanyId)
+        ->companyIds($allowedCompanyIds)
+        ->impersonated($isImpersonating)
         ->scopes(['invoices.read', 'invoices.write'])
-        ->claims([
-            'company_id' => $activeCompanyId,
-            'company_ids' => $allowedCompanyIds,
-            'impersonated' => $isImpersonating,
-        ]),
 );
 ```
 
-`subject_type` and `subject_id` are persisted as indexed columns on `sp_jwt_access_tokens`. Claims are persisted in the `claims` JSON column and embedded into the signed JWT payload.
+`companyId()` sets `subject_type=company`, `subject_id`, and `claims.company_id`. `companyIds()` and `impersonated()` write app-readable claims. Claims are persisted in the `claims` JSON column and embedded into the signed JWT payload.
 
 ## Access Tenant Data in Middleware
 
@@ -37,7 +34,7 @@ use Sopheak\JwtAuth\Traits\HasJwtTokens;
 Route::middleware('auth:api')->group(function () {
     Route::get('/invoices', function (Request $request) {
         $token = $request->user()->token();
-        $companyId = $token?->claim('company_id');
+        $companyId = $token?->companyId();
 
         // App-owned tenant scoping
         return Invoice::where('company_id', $companyId)->paginate();
@@ -77,12 +74,10 @@ $this->app->bind(TokenContextValidator::class, function (): TokenContextValidato
 API keys also support tenant context:
 
 ```php
-$key = app(ApiKeyService::class)->createApiKey(new ApiKeyContext(
-    ownerType: 'company',
-    ownerId: (string) $activeCompanyId,
+$key = app(ApiKeyService::class)->createApiKey(ApiKeyContext::forCompany(
+    companyId: $activeCompanyId,
     name: 'ERP sync',
     scopes: ['invoices.read'],
-    claims: ['company_id' => $activeCompanyId],
 ));
 ```
 
@@ -94,7 +89,3 @@ $key = app(ApiKeyService::class)->createApiKey(new ApiKeyContext(
 | `claims([...])` | Additional context passed through to your app logic |
 
 The package stores both but does not enforce either. Your middleware and controllers own tenant isolation.
-
-## Roadmap Helpers
-
-The current API uses `subject()` and `claims()`. Convenience helpers such as `companyId()`, `companyIds()`, `tenantId()`, `tenantIds()`, and `impersonated()` are good candidates for a future release.

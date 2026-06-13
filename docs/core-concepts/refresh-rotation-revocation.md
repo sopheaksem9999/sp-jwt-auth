@@ -54,7 +54,11 @@ app(JwtTokenService::class)->revokeSession($sessionId);
 app(JwtTokenService::class)->revokeAllForUser($user);
 ```
 
-Use this for "logout everywhere" or after sensitive account changes. The current API revokes every active access and refresh token for the user. An `exceptSessionId` option is not part of the current API.
+Use this for "logout everywhere" or after sensitive account changes. Keep the current session active by passing `exceptSessionId`:
+
+```php
+app(JwtTokenService::class)->revokeAllForUser($user, exceptSessionId: $currentSessionId);
+```
 
 ## Device Metadata
 
@@ -67,6 +71,12 @@ new TokenContext(
 );
 ```
 
-The current package supports session revocation and all-user revocation. Device-specific helpers such as `revokeDevice()` and session listing are roadmap items.
+Revoke one device or list active sessions:
+
+```php
+app(JwtTokenService::class)->revokeDevice($user, $deviceId);
+
+$sessions = app(JwtTokenService::class)->activeSessionsForUser($user);
+```
 
 Revocation updates persisted token rows. JWT validation still checks the database row, so a signed JWT can be made inactive before its `exp`.

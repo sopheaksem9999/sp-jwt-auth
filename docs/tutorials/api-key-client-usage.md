@@ -13,12 +13,11 @@ API keys are for machine clients, background jobs, and third-party integrations 
 use Sopheak\JwtAuth\DTO\ApiKeyContext;
 use Sopheak\JwtAuth\Services\ApiKeyService;
 
-$result = app(ApiKeyService::class)->createApiKey(new ApiKeyContext(
-    ownerType: 'company',
-    ownerId: '42',
+$result = app(ApiKeyService::class)->createApiKey(ApiKeyContext::forCompany(
+    companyId: 42,
     name: 'QuickBooks sync worker',
     scopes: ['qbo.sync', 'invoices.read', 'invoices.write'],
-    claims: ['company_id' => 42],
+    claims: ['environment' => 'production'],
     allowedIps: ['203.0.113.0/24'],
 ));
 
@@ -64,7 +63,7 @@ $principal = $request->attributes->get('sp_api_key_principal');
 $principal->ownerType;   // 'company'
 $principal->ownerId;     // '42'
 $principal->scopes;      // ['qbo.sync', 'invoices.write', 'invoices.read']
-$principal->claims;      // ['company_id' => 42]
+$principal->claims;      // ['environment' => 'production', 'company_id' => 42]
 ```
 
 Use the owner fields for the entity that owns the integration key. Use claims for request-time context that middleware and controllers need to read.
@@ -79,7 +78,7 @@ $rotated = app(ApiKeyService::class)->rotateApiKey($apiKeyId);
 app(ApiKeyService::class)->revokeApiKey($apiKeyId);
 
 // Revoke all keys for an owner
-app(ApiKeyService::class)->revokeApiKeysForOwner('tenant', '42');
+app(ApiKeyService::class)->revokeApiKeysForOwner('company', '42');
 ```
 
 ## Key Format

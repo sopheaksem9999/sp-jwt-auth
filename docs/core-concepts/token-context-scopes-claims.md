@@ -11,9 +11,9 @@ description: "Use TokenContext to attach scopes, claims, subject, device, and se
 use Sopheak\JwtAuth\DTO\TokenContext;
 
 $context = TokenContext::make()
-    ->subject('tenant', '42')
+    ->tenantId(42)
     ->scopes(['invoices.read', 'invoices.write'])
-    ->claims(['tenant_id' => 42]);
+    ->claim('tenant_role', 'owner');
 ```
 
 ## Scopes
@@ -45,6 +45,8 @@ $token = $request->user()?->token();
 
 $tenantId = $token?->claim('tenant_id');
 $companyId = $token?->claim('company_id');
+$companyIds = $token?->companyIds();
+$isImpersonated = $token?->isImpersonated();
 $claims = $token?->claims ?? [];
 ```
 
@@ -67,14 +69,12 @@ Subject context is useful for tenant, company, workspace, or account selection.
 
 ```php
 TokenContext::make()
-    ->subject('company', '1001')
-    ->claims([
-        'company_id' => 1001,
-        'company_ids' => [1001, 1002],
-    ]);
+    ->companyId(1001)
+    ->companyIds([1001, 1002])
+    ->impersonated(false);
 ```
 
-Use `subject_type` / `subject_id` for the primary active tenant/company/workspace context because those columns are indexed on the access-token table. Use claims for app-readable request context. The package does not add hardcoded `company_id` columns because tenant models vary by application.
+`companyId()` sets `subject('company', ...)` and `claims['company_id']`. `companyIds()` stores app-readable company access in `claims['company_ids']`. Use `subject_type` / `subject_id` for the primary active tenant/company/workspace context because those columns are indexed on the access-token table. Use claims for app-readable request context. The package does not add hardcoded `company_id` columns because tenant models vary by application.
 
 The package stores subject and claim data but does not enforce tenant policy. The consuming application owns tenant authorization rules.
 
@@ -84,12 +84,21 @@ The package stores subject and claim data but does not enforce tenant policy. Th
 
 ```php
 return TokenResponse::passportCompatible($pair, [
-    'company_id' => $pair->accessTokenRecord->claim('company_id'),
-    'impersonated' => $pair->accessTokenRecord->claim('impersonated', false),
+    'company_id' => $pair->accessTokenRecord->companyId(),
+    'impersonated' => $pair->accessTokenRecord->isImpersonated(),
 ]);
 ```
 
-A global token-response transformer is not part of the current API. If you need one, register the extra fields in your controller or response resource for now.
+Register a global token response transformer when every token response needs the same app-owned fields:
+
+```php
+TokenResponse::extend(function (array $response, TokenPair $pair): array {
+    $response['company_id'] = $pair->accessTokenRecord->companyId();
+    $response['impersonated'] = $pair->accessTokenRecord->isImpersonated();
+
+    return $response;
+});
+```
 
 ## Device and Session
 
