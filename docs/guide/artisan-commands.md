@@ -35,18 +35,28 @@ Checks the configured guard, user provider, active signing key, hash key, and JW
 
 ```bash
 php artisan sp-jwt-auth:keys --generate --kid=2026-06-primary
-php artisan sp-jwt-auth:keys --generate --kid=2026-06-primary --pem --write-env
+php artisan sp-jwt-auth:keys --generate --kid=2026-06-primary --pem
 php artisan sp-jwt-auth:keys --rotate --kid=2026-07-primary
 php artisan sp-jwt-auth:keys --retire --kid=2026-06-primary
 php artisan sp-jwt-auth:keys --revoke --kid=2026-06-primary --compromised
 ```
 
-Use this command to manage JWT signing key lifecycle.
+Use this command to manage JWT signing key lifecycle. Generate and rotate actions update `.env` by default:
+
+```env
+SP_JWT_ACTIVE_KID=2026-06-primary
+SP_JWT_PRIVATE_KEY_PATH=storage/jwt-private-2026-06-primary.key
+SP_JWT_PUBLIC_KEY_PATH=storage/jwt-public-2026-06-primary.key
+SP_JWT_REFRESH_HASH_KEY=781578bb741cc355a3315f7bc9fa20877570b8f04aa7f4f2afd016c8ae854453
+```
+
+`SP_JWT_REFRESH_HASH_KEY` is only created when missing. Existing refresh hash secrets are preserved.
 
 Flags:
 
 - `--pem`: Output `.pem` files instead of `.key`
-- `--write-env`: Automatically write `SP_JWT_ACTIVE_KID` to `.env`
+- `--write-env`: Deprecated; `.env` is updated by default
+- `--no-write-env`: Print the required environment values without changing `.env`
 - `--force`: Overwrite existing key files
 - `--path`: Output directory (default: `storage`)
 

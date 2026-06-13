@@ -17,15 +17,16 @@ php artisan sp-jwt-auth:validate
 ## 2. Generate or Rotate Keys
 
 ```bash
-php artisan sp-jwt-auth:keys --generate --kid=2026-06-primary --pem --write-env
+php artisan sp-jwt-auth:keys --generate --kid=2026-06-primary --pem
 ```
 
-Use this when you skipped `sp-jwt-auth:setup --keys` or when you need to rotate to a named key id. The default published config reads generated key paths from `.env`:
+Use this when you skipped `sp-jwt-auth:setup --keys` or when you need to rotate to a named key id. The command updates `.env` by default and creates `SP_JWT_REFRESH_HASH_KEY` when it is missing. The default published config reads generated key paths from `.env`:
 
 ```env
 SP_JWT_ACTIVE_KID=2026-06-primary
 SP_JWT_PRIVATE_KEY_PATH=storage/jwt-private-2026-06-primary.pem
 SP_JWT_PUBLIC_KEY_PATH=storage/jwt-public-2026-06-primary.pem
+SP_JWT_REFRESH_HASH_KEY=781578bb741cc355a3315f7bc9fa20877570b8f04aa7f4f2afd016c8ae854453
 ```
 
 ## 3. Configure Guard

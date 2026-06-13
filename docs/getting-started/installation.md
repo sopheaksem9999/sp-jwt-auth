@@ -37,10 +37,10 @@ composer require sopheak/sp-jwt-auth:^0.1
 ## Generate Signing Keys
 
 ```bash
-php artisan sp-jwt-auth:keys --generate --kid=2026-06-primary --pem --write-env
+php artisan sp-jwt-auth:keys --generate --kid=2026-06-primary --pem
 ```
 
-This creates `storage/jwt-private-2026-06-primary.pem` and `storage/jwt-public-2026-06-primary.pem`, then writes `SP_JWT_ACTIVE_KID`, `SP_JWT_PRIVATE_KEY_PATH`, and `SP_JWT_PUBLIC_KEY_PATH` to `.env`.
+This creates `storage/jwt-private-2026-06-primary.pem` and `storage/jwt-public-2026-06-primary.pem`, then writes `SP_JWT_ACTIVE_KID`, `SP_JWT_PRIVATE_KEY_PATH`, and `SP_JWT_PUBLIC_KEY_PATH` to `.env`. It also creates `SP_JWT_REFRESH_HASH_KEY` when the key is missing, without overwriting an existing refresh hash secret.
 
 ## Configure the API Guard
 
@@ -63,7 +63,7 @@ The default published config reads generated key paths from `.env`:
 SP_JWT_ACTIVE_KID=2026-06-primary
 SP_JWT_PRIVATE_KEY_PATH=storage/jwt-private-2026-06-primary.pem
 SP_JWT_PUBLIC_KEY_PATH=storage/jwt-public-2026-06-primary.pem
-SP_JWT_REFRESH_HASH_KEY=change-me-to-a-long-random-secret
+SP_JWT_REFRESH_HASH_KEY=781578bb741cc355a3315f7bc9fa20877570b8f04aa7f4f2afd016c8ae854453
 ```
 
 For custom key storage, replace `keys.items` in `config/sp-jwt-auth.php` with explicit inline keys or paths.
@@ -83,7 +83,7 @@ SP_JWT_PUBLIC_KEY_PATH=storage/jwt-public-2026-06-primary.pem
 SP_JWT_ISSUER=https://your-app.test
 SP_JWT_ACCESS_TTL_MINUTES=15
 SP_JWT_REFRESH_TTL_DAYS=30
-SP_JWT_REFRESH_HASH_KEY=change-me-to-a-long-random-secret
+SP_JWT_REFRESH_HASH_KEY=781578bb741cc355a3315f7bc9fa20877570b8f04aa7f4f2afd016c8ae854453
 ```
 
 ## Next Steps

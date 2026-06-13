@@ -97,7 +97,7 @@ SP_JWT_ACTIVE_KID=2026-06-primary
 SP_JWT_PRIVATE_KEY_PATH=storage/jwt-private-2026-06-primary.pem
 SP_JWT_PUBLIC_KEY_PATH=storage/jwt-public-2026-06-primary.pem
 SP_JWT_HASH_KEY_ID=default
-SP_JWT_REFRESH_HASH_KEY=change-me-to-a-long-random-secret
+SP_JWT_REFRESH_HASH_KEY=781578bb741cc355a3315f7bc9fa20877570b8f04aa7f4f2afd016c8ae854453
 ```
 
 Optional modules have their own config sections:
@@ -341,6 +341,8 @@ php artisan sp-jwt-auth:keys --generate --kid=2026-06-primary
 php artisan sp-jwt-auth:jwks --pretty
 php artisan sp-jwt-auth:prune --expired-days=30 --revoked-days=30
 ```
+
+`sp-jwt-auth:keys --generate` and `--rotate` update `.env` by default with `SP_JWT_ACTIVE_KID`, `SP_JWT_PRIVATE_KEY_PATH`, and `SP_JWT_PUBLIC_KEY_PATH`. They also create `SP_JWT_REFRESH_HASH_KEY` when it is missing, without replacing an existing refresh hash secret. Use `--no-write-env` when your deployment manages environment values outside Artisan.
 
 ## Events and Hooks
 

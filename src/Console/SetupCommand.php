@@ -38,7 +38,6 @@ final class SetupCommand extends Command
             $this->call('sp-jwt-auth:keys', [
                 '--generate' => true,
                 '--pem' => true,
-                '--write-env' => true,
                 '--force' => (bool) $this->option('force'),
             ]);
         }
@@ -89,7 +88,9 @@ final class SetupCommand extends Command
         $envPath = base_path('.env');
         $secret = bin2hex(random_bytes(32));
 
-        EnvFile::put($envPath, 'SP_JWT_REFRESH_HASH_KEY', $secret, overwrite: false);
-        $this->line('Ensured SP_JWT_REFRESH_HASH_KEY exists in .env.');
+        $created = EnvFile::put($envPath, 'SP_JWT_REFRESH_HASH_KEY', $secret, overwrite: false);
+        $this->line($created
+            ? 'Ensured SP_JWT_REFRESH_HASH_KEY exists in .env.'
+            : 'SP_JWT_REFRESH_HASH_KEY already exists in .env.');
     }
 }

@@ -45,7 +45,7 @@ If you can force all clients to obtain new tokens:
 
 ```bash
 php artisan sp-jwt-auth:install
-php artisan sp-jwt-auth:keys --generate --pem --write-env
+php artisan sp-jwt-auth:keys --generate --pem
 php artisan migrate
 ```
 

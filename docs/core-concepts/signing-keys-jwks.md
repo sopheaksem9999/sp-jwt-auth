@@ -13,12 +13,19 @@ Access JWTs are signed with package-configured signing keys. The package support
 php artisan sp-jwt-auth:keys --generate --kid=2026-06-primary
 ```
 
+This writes the generated key paths and active key id to `.env` by default. It also creates `SP_JWT_REFRESH_HASH_KEY` when the app does not have one yet.
+
+For environments that manage `.env` outside Artisan, use `--no-write-env` and copy the printed values into your deployment secret manager.
+
 ## Configure Active Key
 
 Set the active key id:
 
 ```env
 SP_JWT_ACTIVE_KID=2026-06-primary
+SP_JWT_PRIVATE_KEY_PATH=storage/jwt-private-2026-06-primary.key
+SP_JWT_PUBLIC_KEY_PATH=storage/jwt-public-2026-06-primary.key
+SP_JWT_REFRESH_HASH_KEY=781578bb741cc355a3315f7bc9fa20877570b8f04aa7f4f2afd016c8ae854453
 ```
 
 The active key signs new JWTs. Previous keys can still verify old JWTs during a rotation grace period.

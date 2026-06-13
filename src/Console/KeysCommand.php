@@ -6,7 +6,7 @@ namespace Sopheak\JwtAuth\Console;
 
 use Illuminate\Console\Command;
 use Illuminate\Support\Str;
-use Sopheak\JwtAuth\Support\EnvFile;
+use Sopheak\JwtAuth\Support\JwtKeyEnvironment;
 
 final class KeysCommand extends Command
 {
@@ -21,7 +21,8 @@ final class KeysCommand extends Command
         {--algorithm=RS256 : Signing algorithm for the generated key}
         {--path=storage : Directory to write key files (relative to project root)}
         {--pem : Use .pem extension instead of .key}
-        {--write-env : Write SP_JWT_ACTIVE_KID to .env automatically}';
+        {--write-env : Deprecated; .env is updated by default after generating key files}
+        {--no-write-env : Do not update .env after generating key files}';
 
     protected $description = 'Generate or describe JWT signing key lifecycle changes.';
 
@@ -66,21 +67,24 @@ final class KeysCommand extends Command
             $this->line(sprintf('  Private: %s', $privateKeyPath));
             $this->line(sprintf('  Public:  %s', $publicKeyPath));
 
-            if ($this->option('write-env')) {
+            if (! $this->option('no-write-env')) {
                 $envPath = base_path('.env');
-                $envValues = [
-                    'SP_JWT_ACTIVE_KID' => $kid,
-                    'SP_JWT_PRIVATE_KEY_PATH' => $this->relativePath($privateKeyPath),
-                    'SP_JWT_PUBLIC_KEY_PATH' => $this->relativePath($publicKeyPath),
-                ];
-
-                foreach ($envValues as $key => $value) {
-                    EnvFile::put($envPath, $key, $value);
-                }
+                $createdRefreshHash = JwtKeyEnvironment::write(
+                    envPath: $envPath,
+                    kid: $kid,
+                    privateKeyPath: $this->relativePath($privateKeyPath),
+                    publicKeyPath: $this->relativePath($publicKeyPath),
+                );
 
                 $this->line(sprintf('Updated JWT key environment values in %s', $envPath));
+                $this->line($createdRefreshHash
+                    ? sprintf('Ensured SP_JWT_REFRESH_HASH_KEY exists in %s', $envPath)
+                    : sprintf('SP_JWT_REFRESH_HASH_KEY already exists in %s', $envPath));
             } else {
                 $this->line(sprintf('Set SP_JWT_ACTIVE_KID=%s in your .env', $kid));
+                $this->line(sprintf('Set SP_JWT_PRIVATE_KEY_PATH=%s in your .env', $this->relativePath($privateKeyPath)));
+                $this->line(sprintf('Set SP_JWT_PUBLIC_KEY_PATH=%s in your .env', $this->relativePath($publicKeyPath)));
+                $this->line('Ensure SP_JWT_REFRESH_HASH_KEY is set to a long random secret.');
             }
 
             $this->newLine();
