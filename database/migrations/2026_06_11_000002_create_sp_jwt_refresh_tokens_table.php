@@ -30,6 +30,9 @@ return new class extends Migration {
                 ->references('id')
                 ->on('sp_jwt_access_tokens')
                 ->cascadeOnDelete();
+        });
+
+        Schema::table('sp_jwt_refresh_tokens', function (Blueprint $table): void {
             $table->foreign('replaced_by_id')
                 ->references('id')
                 ->on('sp_jwt_refresh_tokens')

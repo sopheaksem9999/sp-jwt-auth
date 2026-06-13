@@ -74,6 +74,9 @@ final class CoreSpJwtAuthServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        // Automatically load migrations from the package
+        $this->loadMigrationsFrom(__DIR__ . '/../database/migrations');
+
         $this->publishes([
             __DIR__ . '/../config/sp-jwt-auth.php' => config_path('sp-jwt-auth.php'),
         ], 'sp-jwt-auth-config');
