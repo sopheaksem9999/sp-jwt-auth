@@ -3,7 +3,7 @@
   "description": "First-party JWT access and rotating refresh token authentication for Laravel apps.",
   "type": "library",
   "license": "proprietary",
-  "version": "0.1.13",
+  "version": "0.1.14",
   "require": {
     "php": "^8.3|^8.4|^8.5",
     "firebase/php-jwt": "^6.10|^7.0",

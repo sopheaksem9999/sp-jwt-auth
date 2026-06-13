@@ -34,6 +34,10 @@ final class JwtGuard implements Guard
 
     public function user(): ?Authenticatable
     {
+        if ($this->user instanceof Authenticatable) {
+            return $this->user;
+        }
+
         $bearer = $this->request->bearerToken();
 
         if ($bearer === null || $bearer === '') {

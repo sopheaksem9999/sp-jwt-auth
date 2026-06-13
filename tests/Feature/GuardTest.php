@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Sopheak\JwtAuth\Tests\Feature;
 
+use Illuminate\Database\Events\QueryExecuted;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Route;
 use Sopheak\JwtAuth\DTO\TokenContext;
 use Sopheak\JwtAuth\Services\JwtTokenService;
@@ -25,6 +27,42 @@ final class GuardTest extends TestCase
             ->getJson('/guard-user')
             ->assertOk()
             ->assertJson(['id' => $user->getAuthIdentifier(), 'can_client' => true]);
+    }
+
+    public function test_guard_reuses_resolved_user_within_same_request(): void
+    {
+        $tokenTouchCount = 0;
+
+        Event::listen(QueryExecuted::class, function (QueryExecuted $event) use (&$tokenTouchCount): void {
+            $sql = strtolower($event->sql);
+
+            if (str_starts_with($sql, 'update') && str_contains($sql, 'sp_jwt_access_tokens')) {
+                $tokenTouchCount++;
+            }
+        });
+
+        Route::middleware('auth:api')->get('/guard-user-cache', function (): array {
+            $first = auth('api')->user();
+            $second = auth('api')->user();
+
+            return [
+                'same_user_instance' => $first === $second,
+                'id' => auth('api')->id(),
+            ];
+        });
+
+        $user = $this->createUser();
+        $pair = app(JwtTokenService::class)->issueTokenPair($user, TokenContext::make()->scopes(['client']));
+
+        $this->withToken($pair->accessToken)
+            ->getJson('/guard-user-cache')
+            ->assertOk()
+            ->assertJson([
+                'same_user_instance' => true,
+                'id' => $user->getAuthIdentifier(),
+            ]);
+
+        self::assertSame(1, $tokenTouchCount);
     }
 
     public function test_package_does_not_replace_web_guard(): void
