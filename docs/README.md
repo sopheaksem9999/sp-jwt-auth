@@ -15,6 +15,11 @@ keywords:
 
 Use this map to route readers and AI agents to the smallest useful document.
 
+Public links:
+
+- Documentation site: [https://sp-jwt-auth-docs.vercel.app](https://sp-jwt-auth-docs.vercel.app)
+- Packagist: [https://packagist.org/packages/sopheak/sp-jwt-auth](https://packagist.org/packages/sopheak/sp-jwt-auth)
+
 ## Getting Started
 
 - [Overview](./getting-started/overview.md)

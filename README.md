@@ -10,6 +10,11 @@
 
 The package owns authentication infrastructure. Your application still owns password login, registration, user creation, tenants, roles, UI, response shape, delivery templates, and business authorization policy.
 
+Public package links:
+
+- Documentation: [sp-jwt-auth-docs.vercel.app](https://sp-jwt-auth-docs.vercel.app)
+- Packagist: [packagist.org/packages/sopheak/sp-jwt-auth](https://packagist.org/packages/sopheak/sp-jwt-auth)
+
 ## Features
 
 | Module | What it provides | Default |
@@ -421,6 +426,8 @@ The package emits lifecycle events for:
 
 ## Documentation
 
+- [Documentation site](https://sp-jwt-auth-docs.vercel.app)
+- [Packagist package](https://packagist.org/packages/sopheak/sp-jwt-auth)
 - [Getting started](docs/getting-started/installation.md)
 - [Quick start](docs/getting-started/quick-start.md)
 - [Auth controller example](docs/tutorials/auth-controller.md)
