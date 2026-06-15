@@ -18,3 +18,9 @@ All notable changes to `sopheak/sp-jwt-auth` will be documented in this file.
 - External identity DTO/store and provider contract for Socialite/OIDC-style login flows.
 - Optional OAuth server storage and services with clients, consents, authorization-code + PKCE, refresh tokens, client credentials, revocation, introspection, and resource middleware.
 - Lifecycle events for account security, API keys, external identity, and OAuth server audit hooks.
+
+### Changed
+- Updated package metadata and documentation for MIT licensing and public Packagist installation.
+- Added community contribution, conduct, support, issue, pull request, security, and Dependabot files.
+- Replaced realistic-looking documentation secrets with placeholder values.
+- Added README badges, a pre-1.0 stability note, and a copy-paste JWT login and refresh quick start.

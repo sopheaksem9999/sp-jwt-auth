@@ -134,7 +134,7 @@ Use this exact package shape, preserving the existing scripts where names still 
   "name": "sopheak/sp-jwt-auth",
   "description": "First-party JWT access and rotating refresh token authentication for Laravel apps.",
   "type": "library",
-  "license": "proprietary",
+  "license": "MIT",
   "version": "0.1.10",
   "require": {
     "php": "^8.3|^8.4|^8.5",

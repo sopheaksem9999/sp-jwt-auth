@@ -25,7 +25,7 @@ Set the active key id:
 SP_JWT_ACTIVE_KID=2026-06-primary
 SP_JWT_PRIVATE_KEY_PATH=storage/jwt-private-2026-06-primary.key
 SP_JWT_PUBLIC_KEY_PATH=storage/jwt-public-2026-06-primary.key
-SP_JWT_REFRESH_HASH_KEY=781578bb741cc355a3315f7bc9fa20877570b8f04aa7f4f2afd016c8ae854453
+SP_JWT_REFRESH_HASH_KEY=your-random-refresh-hash-secret
 ```
 
 The active key signs new JWTs. Previous keys can still verify old JWTs during a rotation grace period.

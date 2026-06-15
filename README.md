@@ -1,5 +1,11 @@
 # SP JWT Auth
 
+[![Latest Stable Version](https://img.shields.io/packagist/v/sopheak/sp-jwt-auth.svg)](https://packagist.org/packages/sopheak/sp-jwt-auth)
+[![Total Downloads](https://img.shields.io/packagist/dt/sopheak/sp-jwt-auth.svg)](https://packagist.org/packages/sopheak/sp-jwt-auth)
+[![PHP Version](https://img.shields.io/packagist/dependency-v/sopheak/sp-jwt-auth/php.svg)](composer.json)
+[![License](https://img.shields.io/packagist/l/sopheak/sp-jwt-auth.svg)](LICENSE)
+[![Security](https://github.com/sopheak/sp-jwt-auth/actions/workflows/security.yml/badge.svg)](https://github.com/sopheak/sp-jwt-auth/actions/workflows/security.yml)
+
 `sopheak/sp-jwt-auth` is a modular Laravel authentication package for first-party JWT APIs, rotating opaque refresh tokens, account security workflows, API keys, external identity links, and optional OAuth server mode.
 
 The package owns authentication infrastructure. Your application still owns password login, registration, user creation, tenants, roles, UI, response shape, delivery templates, and business authorization policy.
@@ -28,31 +34,22 @@ Optional integrations are kept in Composer `suggest`:
 - `league/oauth2-client`
 - `league/oauth2-server`
 
+## Stability
+
+This package is pre-1.0. APIs, config keys, and optional module behavior may change before `v1.0.0`. Pin a tagged version in production and review the changelog before upgrading.
+
 ## Installation
 
-This package is installed from a private Git repository. In the client application's `composer.json`, manually add a VCS repository entry:
+The package is public on Packagist: [sopheak/sp-jwt-auth](https://packagist.org/packages/sopheak/sp-jwt-auth).
 
-```json
-{
-  "repositories": [
-    {
-      "type": "vcs",
-      "url": "https://github.com/<org>/<repo>.git"
-    }
-  ]
-}
-```
-
-Then require a tagged version. If Composer or Git asks for authentication, use your GitHub username and a personal access token with read access to this repository:
+Install it with Composer:
 
 ```bash
-composer require sopheak/sp-jwt-auth:^0.1
+composer require sopheak/sp-jwt-auth
 php artisan sp-jwt-auth:setup --keys
 php artisan migrate
 php artisan sp-jwt-auth:validate
 ```
-
-Do not commit tokens into `composer.json`; Composer can store credentials in `auth.json` after the prompt.
 
 The setup command publishes config and migrations, attempts to add the Laravel `api` guard, generates local PEM signing keys with `--keys`, and writes the related JWT key paths and refresh hash secret to `.env`. If your `config/auth.php` is custom, add the guard manually:
 
@@ -67,7 +64,7 @@ The setup command publishes config and migrations, attempts to add the Laravel `
 
 Keep Laravel's normal `web` guard for Blade, Livewire, Inertia, and session pages.
 
-For local path testing before a release tag exists:
+For local path testing while developing the package:
 
 ```bash
 composer config repositories.sp-jwt-auth '{"type":"path","url":"/absolute/path/to/sp-jwt-auth","options":{"versions":{"sopheak/sp-jwt-auth":"0.1.0"}}}'
@@ -97,7 +94,7 @@ SP_JWT_ACTIVE_KID=2026-06-primary
 SP_JWT_PRIVATE_KEY_PATH=storage/jwt-private-2026-06-primary.pem
 SP_JWT_PUBLIC_KEY_PATH=storage/jwt-public-2026-06-primary.pem
 SP_JWT_HASH_KEY_ID=default
-SP_JWT_REFRESH_HASH_KEY=781578bb741cc355a3315f7bc9fa20877570b8f04aa7f4f2afd016c8ae854453
+SP_JWT_REFRESH_HASH_KEY=your-random-refresh-hash-secret
 ```
 
 Optional modules have their own config sections:
@@ -108,6 +105,63 @@ Optional modules have their own config sections:
 - `api_keys`
 - `external_identities`
 - `oauth_server`
+
+## Quick Start
+
+Create login and refresh endpoints in your Laravel app. Your app owns credential validation; the package owns token issuing, refresh rotation, and token response formatting.
+
+```php
+use App\Models\User;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Route;
+use Illuminate\Validation\ValidationException;
+use Sopheak\JwtAuth\DTO\TokenContext;
+use Sopheak\JwtAuth\Services\JwtTokenService;
+use Sopheak\JwtAuth\Support\TokenResponse;
+
+Route::post('/login', function (Request $request, JwtTokenService $jwt) {
+    $credentials = $request->validate([
+        'email' => ['required', 'email'],
+        'password' => ['required', 'string'],
+    ]);
+
+    $user = User::query()->where('email', $credentials['email'])->first();
+
+    if (! $user || ! Hash::check($credentials['password'], $user->password)) {
+        throw ValidationException::withMessages([
+            'email' => ['The provided credentials are incorrect.'],
+        ]);
+    }
+
+    $pair = $jwt->issueTokenPair(
+        $user,
+        TokenContext::make()->scopes(['profile.read']),
+    );
+
+    return TokenResponse::passportCompatible($pair);
+});
+
+Route::post('/refresh', function (Request $request, JwtTokenService $jwt) {
+    $data = $request->validate([
+        'refresh_token' => ['required', 'string'],
+    ]);
+
+    return TokenResponse::passportCompatible(
+        $jwt->rotateRefreshToken($data['refresh_token']),
+    );
+});
+
+Route::middleware('auth:api')->get('/me', function (Request $request) {
+    return $request->user();
+});
+```
+
+Call protected routes with the returned access token:
+
+```http
+Authorization: Bearer <access-token>
+```
 
 ## Core JWT Usage
 
@@ -369,7 +423,12 @@ The package emits lifecycle events for:
 
 - [Getting started](docs/getting-started/installation.md)
 - [Quick start](docs/getting-started/quick-start.md)
-- [Auth controller example](docs/getting-started/auth-controller.md)
+- [Auth controller example](docs/tutorials/auth-controller.md)
+- [SPA and mobile integration](docs/tutorials/spa-mobile-integration.md)
+- [API key client usage](docs/tutorials/api-key-client-usage.md)
+- [OAuth authorization code](docs/tutorials/oauth-server-authorization-code.md)
+- [OAuth client credentials](docs/tutorials/oauth-server-client-credentials.md)
+- [MFA login](docs/tutorials/login-with-mfa.md)
 - [Core JWT](docs/core-concepts/core-jwt.md)
 - [Configuration](docs/core-concepts/configuration.md)
 - [Account security](docs/features/mfa-otp.md)
@@ -388,6 +447,25 @@ composer quality
 
 `composer quality` runs Rector dry-run, PHPStan, and PHPUnit.
 
+## Release
+
+Packagist versions are created from Git tags:
+
+```bash
+git tag v1.0.0
+git push origin v1.0.0
+```
+
+Packagist is already configured at [packagist.org/packages/sopheak/sp-jwt-auth](https://packagist.org/packages/sopheak/sp-jwt-auth). After pushing a new tag, Packagist makes the release available to Composer.
+
+## Community
+
+- Use GitHub Issues for reproducible bugs and focused feature requests.
+- Use GitHub Discussions for questions, roadmap ideas, and integration help.
+- See [SUPPORT.md](SUPPORT.md) for support channels and security boundaries.
+- Report vulnerabilities through GitHub Security Advisories or the process in [SECURITY.md](SECURITY.md).
+- Contributions are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) and [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).
+
 ## License
 
-This package is proprietary software.
+This package is open-source software licensed under the [MIT license](LICENSE).

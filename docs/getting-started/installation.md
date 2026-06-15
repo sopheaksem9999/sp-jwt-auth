@@ -5,23 +5,10 @@ description: "Install and configure sopheak/sp-jwt-auth in a Laravel app."
 
 # Installation
 
-This package is installed from a private Git repository. In the host Laravel application's `composer.json`, manually add a VCS repository entry:
-
-```json
-{
-  "repositories": [
-    {
-      "type": "vcs",
-      "url": "https://github.com/<org>/<repo>.git"
-    }
-  ]
-}
-```
-
-If Composer or Git asks for authentication, use your GitHub username and a personal access token with read access to this repository. Do not put access tokens directly in `composer.json`; Composer can store credentials in `auth.json` after the prompt.
+Install the package from Packagist:
 
 ```bash
-composer require sopheak/sp-jwt-auth:^0.1
+composer require sopheak/sp-jwt-auth
 php artisan sp-jwt-auth:setup --keys
 php artisan migrate
 php artisan sp-jwt-auth:validate
@@ -63,7 +50,7 @@ The default published config reads generated key paths from `.env`:
 SP_JWT_ACTIVE_KID=2026-06-primary
 SP_JWT_PRIVATE_KEY_PATH=storage/jwt-private-2026-06-primary.pem
 SP_JWT_PUBLIC_KEY_PATH=storage/jwt-public-2026-06-primary.pem
-SP_JWT_REFRESH_HASH_KEY=781578bb741cc355a3315f7bc9fa20877570b8f04aa7f4f2afd016c8ae854453
+SP_JWT_REFRESH_HASH_KEY=your-random-refresh-hash-secret
 ```
 
 For custom key storage, replace `keys.items` in `config/sp-jwt-auth.php` with explicit inline keys or paths.
@@ -83,7 +70,7 @@ SP_JWT_PUBLIC_KEY_PATH=storage/jwt-public-2026-06-primary.pem
 SP_JWT_ISSUER=https://your-app.test
 SP_JWT_ACCESS_TTL_MINUTES=15
 SP_JWT_REFRESH_TTL_DAYS=30
-SP_JWT_REFRESH_HASH_KEY=781578bb741cc355a3315f7bc9fa20877570b8f04aa7f4f2afd016c8ae854453
+SP_JWT_REFRESH_HASH_KEY=your-random-refresh-hash-secret
 ```
 
 ## Next Steps
