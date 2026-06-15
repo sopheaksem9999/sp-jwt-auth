@@ -5,7 +5,7 @@ description: "Install and configure sopheak/sp-jwt-auth in a Laravel app."
 
 # Installation
 
-Install the package from Packagist:
+Install the public package from Packagist:
 
 ```bash
 composer require sopheak/sp-jwt-auth
@@ -14,7 +14,12 @@ php artisan migrate
 php artisan sp-jwt-auth:validate
 ```
 
-For local path testing before a Git tag exists:
+Package links:
+
+- Documentation: [https://sp-jwt-auth-docs.vercel.app](https://sp-jwt-auth-docs.vercel.app)
+- Packagist: [https://packagist.org/packages/sopheak/sp-jwt-auth](https://packagist.org/packages/sopheak/sp-jwt-auth)
+
+For local path testing while developing the package:
 
 ```bash
 composer config repositories.sp-jwt-auth '{"type":"path","url":"/absolute/path/to/sp-jwt-auth","options":{"versions":{"sopheak/sp-jwt-auth":"0.1.0"}}}'

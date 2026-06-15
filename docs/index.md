@@ -12,6 +12,9 @@ hero:
     - theme: alt
       text: "Quick Start"
       link: "/getting-started/quick-start"
+    - theme: alt
+      text: "Packagist"
+      link: "https://packagist.org/packages/sopheak/sp-jwt-auth"
 
 features:
   - title: "Core JWT"
