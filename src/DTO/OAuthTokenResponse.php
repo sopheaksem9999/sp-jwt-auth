@@ -12,9 +12,11 @@ final readonly class OAuthTokenResponse
         public int $expiresIn,
         public ?string $refreshToken = null,
         public array $scopes = [],
-    ) {
-    }
+    ) {}
 
+    /**
+     * @return array<string, int|string>
+     */
     public function toArray(): array
     {
         $payload = [

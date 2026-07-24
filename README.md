@@ -1,6 +1,5 @@
 # SP JWT Auth
 
-<<<<<<< HEAD
 [![Latest Stable Version](https://img.shields.io/packagist/v/sopheak/sp-jwt-auth.svg)](https://packagist.org/packages/sopheak/sp-jwt-auth)
 [![Total Downloads](https://img.shields.io/packagist/dt/sopheak/sp-jwt-auth.svg)](https://packagist.org/packages/sopheak/sp-jwt-auth)
 [![PHP Version](https://img.shields.io/packagist/dependency-v/sopheak/sp-jwt-auth/php.svg)](composer.json)
@@ -15,13 +14,6 @@ Public package links:
 
 - Documentation: [sp-jwt-auth-docs.vercel.app](https://sp-jwt-auth-docs.vercel.app)
 - Packagist: [packagist.org/packages/sopheak/sp-jwt-auth](https://packagist.org/packages/sopheak/sp-jwt-auth)
-
-=======
-`sopheak/sp-jwt-auth` is a modular Laravel authentication package for first-party JWT APIs, rotating opaque refresh tokens, account security workflows, API keys, external identity links, and optional OAuth server mode.
-
-The package owns authentication infrastructure. Your application still owns password login, registration, user creation, tenants, roles, UI, response shape, delivery templates, and business authorization policy.
-
->>>>>>> 11e06a7 (feat: add complete Laravel JWT auth package with OAuth support)
 ## Features
 
 | Module | What it provides | Default |
@@ -46,7 +38,6 @@ Optional integrations are kept in Composer `suggest`:
 - `league/oauth2-client`
 - `league/oauth2-server`
 
-<<<<<<< HEAD
 ## Stability
 
 This package is pre-1.0. APIs, config keys, and optional module behavior may change before `v1.0.0`. Pin a tagged version in production and review the changelog before upgrading.
@@ -60,24 +51,11 @@ Install it with Composer:
 ```bash
 composer require sopheak/sp-jwt-auth
 php artisan sp-jwt-auth:install --keys
-composer require sopheak/sp-jwt-auth
-php artisan sp-jwt-auth:setup --keys
-=======
-## Installation
-
-```bash
-composer require sopheak/sp-jwt-auth
-php artisan sp-jwt-auth:install --keys
->>>>>>> 11e06a7 (feat: add complete Laravel JWT auth package with OAuth support)
 php artisan migrate
 php artisan sp-jwt-auth:validate
 ```
 
-<<<<<<< HEAD
 The setup command publishes config and migrations, attempts to add the Laravel `api` guard, generates local PEM signing keys with `--keys`, and writes the related JWT key paths and refresh hash secret to `.env`. If your `config/auth.php` is custom, add the guard manually:
-=======
-Configure the Laravel API guard:
->>>>>>> 11e06a7 (feat: add complete Laravel JWT auth package with OAuth support)
 
 ```php
 'guards' => [
@@ -90,16 +68,12 @@ Configure the Laravel API guard:
 
 Keep Laravel's normal `web` guard for Blade, Livewire, Inertia, and session pages.
 
-<<<<<<< HEAD
 For local path testing while developing the package:
 
 ```bash
 composer config repositories.sp-jwt-auth '{"type":"path","url":"/absolute/path/to/sp-jwt-auth","options":{"versions":{"sopheak/sp-jwt-auth":"0.1.0"}}}'
 composer require sopheak/sp-jwt-auth:^0.1
 ```
-
-=======
->>>>>>> 11e06a7 (feat: add complete Laravel JWT auth package with OAuth support)
 ## Configuration
 
 Publish the config when needed:
@@ -120,15 +94,10 @@ SP_JWT_ACCESS_TTL_MINUTES=15
 SP_JWT_REFRESH_TTL_DAYS=60
 SP_JWT_REUSE_DETECTION=revoke_session
 SP_JWT_ACTIVE_KID=2026-06-primary
-<<<<<<< HEAD
 SP_JWT_PRIVATE_KEY_PATH=storage/jwt-private-2026-06-primary.pem
 SP_JWT_PUBLIC_KEY_PATH=storage/jwt-public-2026-06-primary.pem
 SP_JWT_HASH_KEY_ID=default
 SP_JWT_REFRESH_HASH_KEY=your-random-refresh-hash-secret
-=======
-SP_JWT_HASH_KEY_ID=default
-SP_JWT_REFRESH_HASH_KEY=change-me-to-a-long-random-secret
->>>>>>> 11e06a7 (feat: add complete Laravel JWT auth package with OAuth support)
 ```
 
 Optional modules have their own config sections:
@@ -140,7 +109,6 @@ Optional modules have their own config sections:
 - `external_identities`
 - `oauth_server`
 
-<<<<<<< HEAD
 ## Quick Start
 
 Create login and refresh endpoints in your Laravel app. Your app owns credential validation; the package owns token issuing, refresh rotation, and token response formatting.
@@ -198,8 +166,6 @@ Call protected routes with the returned access token:
 Authorization: Bearer <access-token>
 ```
 
-=======
->>>>>>> 11e06a7 (feat: add complete Laravel JWT auth package with OAuth support)
 ## Core JWT Usage
 
 Your app validates credentials, resolves a user, builds a `TokenContext`, then asks the package to issue tokens.
@@ -212,22 +178,15 @@ use Sopheak\JwtAuth\Support\TokenResponse;
 $pair = app(JwtTokenService::class)->issueTokenPair(
     $user,
     TokenContext::make()
-<<<<<<< HEAD
         ->companyId(42)
         ->companyIds([42, 84])
         ->scopes(['invoices.read', 'invoices.write'])
         ->impersonated(false),
-=======
-        ->subject('tenant', '42')
-        ->scopes(['invoices.read', 'invoices.write'])
-        ->claims(['tenant_id' => 42]),
->>>>>>> 11e06a7 (feat: add complete Laravel JWT auth package with OAuth support)
 );
 
 return TokenResponse::passportCompatible($pair);
 ```
 
-<<<<<<< HEAD
 Read claims from the authenticated token:
 
 ```php
@@ -302,8 +261,6 @@ app(JwtTokenService::class)->revokeAllForUser($request->user());
 ## Account Security
 
 Account security brokers can be called from controllers, Livewire actions, queued jobs, or service classes. Delivery is app-owned through sender contracts.
-<<<<<<< HEAD
-=======
 
 ```php
 use Sopheak\JwtAuth\DTO\OtpDestination;

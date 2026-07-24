@@ -27,7 +27,7 @@ final class TokenIssueValidateTest extends TestCase
         self::assertMatchesRegularExpression('/^[^.]+\\.[^.]+$/', $pair->refreshToken);
         self::assertSame(1, JwtAccessToken::query()->count());
         self::assertSame(1, JwtRefreshToken::query()->count());
-        self::assertDatabaseMissing('sp_jwt_refresh_tokens', ['secret_hash' => explode('.', $pair->refreshToken, 2)[1]]);
+        self::assertDatabaseMissing('sp_jwt_refresh_tokens', ['secret_hash' => explode('.', (string) $pair->refreshToken, 2)[1]]);
 
         $accessToken = $service->validateAccessToken($pair->accessToken);
 

@@ -5,10 +5,7 @@ declare(strict_types=1);
 namespace Sopheak\JwtAuth\Tests\Feature;
 
 use Sopheak\JwtAuth\DTO\TokenContext;
-<<<<<<< HEAD
 use Sopheak\JwtAuth\DTO\TokenPair;
-=======
->>>>>>> 11e06a7 (feat: add complete Laravel JWT auth package with OAuth support)
 use Sopheak\JwtAuth\Models\JwtAccessToken;
 use Sopheak\JwtAuth\Services\JwtTokenService;
 use Sopheak\JwtAuth\Support\TokenResponse;
@@ -28,7 +25,6 @@ final class CommandTest extends TestCase
         self::assertSame(1, $response['company_id']);
     }
 
-<<<<<<< HEAD
     public function test_token_response_can_be_extended_globally(): void
     {
         TokenResponse::extend(function (array $response, TokenPair $pair): array {
@@ -53,8 +49,6 @@ final class CommandTest extends TestCase
         }
     }
 
-=======
->>>>>>> 11e06a7 (feat: add complete Laravel JWT auth package with OAuth support)
     public function test_prune_command_deletes_old_expired_tokens(): void
     {
         $pair = app(JwtTokenService::class)->issueTokenPair($this->createUser(), TokenContext::make());

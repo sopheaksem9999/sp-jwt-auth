@@ -8,7 +8,6 @@ hero:
   actions:
     - theme: brand
       text: "Get Started"
-<<<<<<< HEAD
       link: "/getting-started/overview"
     - theme: alt
       text: "Quick Start"
@@ -16,12 +15,6 @@ hero:
     - theme: alt
       text: "Packagist"
       link: "https://packagist.org/packages/sopheak/sp-jwt-auth"
-=======
-      link: "/guide/getting-started"
-    - theme: alt
-      text: "Guide Index"
-      link: "/guide/"
->>>>>>> 11e06a7 (feat: add complete Laravel JWT auth package with OAuth support)
 
 features:
   - title: "Core JWT"
