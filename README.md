@@ -59,6 +59,8 @@ Install it with Composer:
 
 ```bash
 composer require sopheak/sp-jwt-auth
+php artisan sp-jwt-auth:install --keys
+composer require sopheak/sp-jwt-auth
 php artisan sp-jwt-auth:setup --keys
 =======
 ## Installation
@@ -650,6 +652,8 @@ The package emits lifecycle events for:
 
 ## Documentation
 
+- [Documentation site](https://sp-jwt-auth-docs.vercel.app)
+- [Packagist package](https://packagist.org/packages/sopheak/sp-jwt-auth)
 - [Documentation site](https://sp-jwt-auth-docs.vercel.app)
 - [Packagist package](https://packagist.org/packages/sopheak/sp-jwt-auth)
 - [Getting started](docs/getting-started/installation.md)

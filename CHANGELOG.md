@@ -1,6 +1,7 @@
 # Changelog
 
 All notable changes to `sopheak/sp-jwt-auth` will be documented in this file.
+All notable changes to `sopheak/sp-jwt-auth` will be documented in this file.
 
 ## [Unreleased]
 
