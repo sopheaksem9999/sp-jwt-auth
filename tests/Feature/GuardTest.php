@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace Sopheak\JwtAuth\Tests\Feature;
 
 use Illuminate\Database\Events\QueryExecuted;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Route;
 use Sopheak\JwtAuth\DTO\TokenContext;
+use Sopheak\JwtAuth\Guards\JwtGuard;
 use Sopheak\JwtAuth\Services\JwtTokenService;
 use Sopheak\JwtAuth\Tests\TestCase;
 
@@ -63,6 +65,60 @@ final class GuardTest extends TestCase
             ]);
 
         self::assertSame(1, $tokenTouchCount);
+    }
+
+    public function test_guard_methods_and_edge_cases(): void
+    {
+        /** @var JwtGuard $guard */
+        $guard = auth('api');
+
+        // Unauthenticated guard state
+        self::assertNull($guard->user());
+        self::assertNull($guard->id());
+        self::assertFalse($guard->check());
+        self::assertTrue($guard->guest());
+        self::assertFalse($guard->hasUser());
+        self::assertFalse($guard->validate(['username' => 'foo']));
+
+        // Explicit setUser
+        $user = $this->createUser();
+        $guard->setUser($user);
+
+        self::assertTrue($guard->hasUser());
+        self::assertTrue($guard->check());
+        self::assertFalse($guard->guest());
+        self::assertSame($user, $guard->user());
+        self::assertSame($user->getAuthIdentifier(), $guard->id());
+
+        // setRequest resets resolved user
+        $guard->setRequest(Request::create('/test', 'GET'));
+        self::assertFalse($guard->hasUser());
+        self::assertNull($guard->user());
+    }
+
+    public function test_guard_returns_null_when_token_is_invalid_or_user_deleted(): void
+    {
+        /** @var JwtGuard $guard */
+        $guard = auth('api');
+
+        // Invalid token
+        $request = Request::create('/test', 'GET', [], [], [], [
+            'HTTP_AUTHORIZATION' => 'Bearer invalid-token-string',
+        ]);
+        $guard->setRequest($request);
+        self::assertNull($guard->user());
+
+        // Token valid but user removed from DB
+        $user = $this->createUser();
+        $pair = app(JwtTokenService::class)->issueTokenPair($user, TokenContext::make());
+
+        $requestWithToken = Request::create('/test', 'GET', [], [], [], [
+            'HTTP_AUTHORIZATION' => 'Bearer ' . $pair->accessToken,
+        ]);
+        $guard->setRequest($requestWithToken);
+
+        $user->delete();
+        self::assertNull($guard->user());
     }
 
     public function test_package_does_not_replace_web_guard(): void
