@@ -58,7 +58,7 @@ final readonly class EmailVerificationBroker
     public function resendVerificationToken(string $tokenId): EmailVerificationDispatch
     {
         $record = EmailVerificationToken::query()->findOrFail($tokenId);
-        $user = $this->resolveUser($record->user_type, $record->user_id);
+        $user = $this->resolveUser($record->user_type, (string) $record->user_id);
 
         return $this->createVerificationToken($user, $record->email_masked, $record->metadata ?? []);
     }
@@ -78,7 +78,7 @@ final readonly class EmailVerificationBroker
 
         $record->forceFill(['verified_at' => now()])->save();
 
-        $result = new EmailVerificationResult($this->resolveUser($record->user_type, $record->user_id), $this->unmaskableEmail($record));
+        $result = new EmailVerificationResult($this->resolveUser($record->user_type, (string) $record->user_id), $this->unmaskableEmail($record));
         Event::dispatch(new EmailVerified($result));
 
         return $result;
@@ -122,7 +122,7 @@ final readonly class EmailVerificationBroker
 
     private function unmaskableEmail(EmailVerificationToken $record): string
     {
-        $user = $this->resolveUser($record->user_type, $record->user_id);
+        $user = $this->resolveUser($record->user_type, (string) $record->user_id);
 
         return (string) ($user->email ?? $record->email_masked);
     }

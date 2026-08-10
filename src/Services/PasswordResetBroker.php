@@ -93,7 +93,7 @@ final readonly class PasswordResetBroker
             $record->forceFill(['used_at' => now()])->save();
         }
 
-        $user = $this->resolveUser($record->user_type, $record->user_id);
+        $user = $this->resolveUser($record->user_type, (string) $record->user_id);
         $result = new PasswordResetResult($user, (string) ($user->email ?? $record->email_masked));
 
         if ($consume) {
