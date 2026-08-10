@@ -125,6 +125,10 @@ final class CoreSpJwtAuthServiceProvider extends ServiceProvider
         $this->registerFirstFactorOtpRateLimiters();
         $this->registerFirstFactorOtpRoutes();
 
+        if ((bool) config('sp-jwt-auth.token_endpoints.enabled', false)) {
+            Route::group([], __DIR__ . '/../routes/token.php');
+        }
+
         if ($this->app->runningInConsole()) {
             $this->commands([
                 InstallCommand::class,

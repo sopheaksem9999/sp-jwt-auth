@@ -81,6 +81,11 @@ return [
         ],
     ],
 
+    'token_endpoints' => [
+        'enabled' => filter_var(env('SP_JWT_TOKEN_ENDPOINTS_ENABLED', false), FILTER_VALIDATE_BOOL),
+        'route_prefix' => env('SP_JWT_TOKEN_ENDPOINTS_ROUTE_PREFIX', 'auth'),
+    ],
+
     'email_verification' => [
         'enabled' => filter_var(env('SP_JWT_EMAIL_VERIFICATION_ENABLED', false), FILTER_VALIDATE_BOOL),
         'ttl_minutes' => (int) env('SP_JWT_EMAIL_VERIFICATION_TTL_MINUTES', 60),
