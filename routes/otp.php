@@ -20,11 +20,15 @@ Route::prefix((string) config('sp-jwt-auth.first_factor_otp.route_prefix', 'otp'
             ? OtpDestination::email($data['destination'])
             : OtpDestination::phone($data['destination']);
 
-        $dispatch = $broker->request(
-            $destination,
-            $data['purpose'],
-            is_string($data['requested_type'] ?? null) ? $data['requested_type'] : null,
-        );
+        try {
+            $dispatch = $broker->request(
+                $destination,
+                $data['purpose'],
+                is_string($data['requested_type'] ?? null) ? $data['requested_type'] : null,
+            );
+        } catch (\InvalidArgumentException $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
+        }
 
         return response()->json([
             'otp_id' => $dispatch->otpId,
@@ -44,7 +48,11 @@ Route::prefix((string) config('sp-jwt-auth.first_factor_otp.route_prefix', 'otp'
             ? OtpDestination::email($data['destination'])
             : OtpDestination::phone($data['destination']);
 
-        $dispatch = $broker->resend($data['otp_id'], $destination);
+        try {
+            $dispatch = $broker->resend($data['otp_id'], $destination);
+        } catch (\InvalidArgumentException $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
+        }
 
         return response()->json([
             'otp_id' => $dispatch->otpId,
@@ -69,7 +77,11 @@ Route::prefix((string) config('sp-jwt-auth.first_factor_otp.route_prefix', 'otp'
                 : OtpDestination::phone($data['destination']);
         }
 
-        $verification = $broker->verify($data['otp_id'], $data['code'], $destination);
+        try {
+            $verification = $broker->verify($data['otp_id'], $data['code'], $destination);
+        } catch (\InvalidArgumentException $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
+        }
 
         return response()->json([
             'access_token' => $verification->pair->accessToken,

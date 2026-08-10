@@ -256,14 +256,22 @@ final class FirstFactorOtpBrokerTest extends TestCase
         $this->broker()->verify($dispatch->otpId, $dispatch->plaintextCode);
     }
 
-    public function test_verify_rejects_mismatched_destination(): void
+    public function test_verify_rejects_mismatched_destination_without_consuming(): void
     {
         $this->bindResolver(existing: $this->createUser());
 
         $dispatch = $this->broker()->request(OtpDestination::email('a@b.com'), 'login');
 
-        $this->expectException(InvalidArgumentException::class);
+        try {
+            $this->broker()->verify($dispatch->otpId, $dispatch->plaintextCode, OtpDestination::email('other@example.com'));
+            $this->fail('Expected InvalidArgumentException');
+        } catch (InvalidArgumentException) {
+        }
 
-        $this->broker()->verify($dispatch->otpId, $dispatch->plaintextCode, OtpDestination::email('other@example.com'));
+        $this->assertNull(FirstFactorOtpCode::query()->findOrFail($dispatch->otpId)->verified_at);
+
+        $verification = $this->broker()->verify($dispatch->otpId, $dispatch->plaintextCode, OtpDestination::email('a@b.com'));
+
+        $this->assertNotEmpty($verification->pair->accessToken);
     }
 }

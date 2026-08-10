@@ -102,4 +102,38 @@ final class FirstFactorOtpHttpTest extends TestCase
 
         $this->postJson('/otp/request', $payload)->assertStatus(429)->assertHeader('Retry-After');
     }
+
+    public function test_request_endpoint_rejects_unknown_purpose_with_422(): void
+    {
+        $this->bindResolver($this->createUser());
+
+        config()->set('sp-jwt-auth.first_factor_otp.purposes', ['login']);
+
+        $this->postJson('/otp/request', [
+            'destination' => 'user@example.com',
+            'channel' => 'email',
+            'purpose' => 'register',
+        ])->assertStatus(422);
+    }
+
+    public function test_verify_endpoint_rejects_mismatched_destination_with_422(): void
+    {
+        config()->set('sp-jwt-auth.first_factor_otp.test_mode', true);
+        config()->set('sp-jwt-auth.first_factor_otp.test_code', '424242');
+
+        $this->bindResolver($this->createUser());
+
+        $request = $this->postJson('/otp/request', [
+            'destination' => 'user@example.com',
+            'channel' => 'email',
+            'purpose' => 'login',
+        ]);
+
+        $this->postJson('/otp/verify', [
+            'otp_id' => $request->json('otp_id'),
+            'code' => '424242',
+            'destination' => 'other@example.com',
+            'channel' => 'email',
+        ])->assertStatus(422);
+    }
 }

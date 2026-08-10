@@ -108,15 +108,19 @@ final readonly class FirstFactorOtpBroker
 
     public function verify(string $otpId, string $code, ?OtpDestination $destination = null): FirstFactorVerification
     {
-        $otp = $this->consume($otpId, $code);
-
         if ($destination instanceof OtpDestination) {
             $destinationHash = $this->hasher->hash($destination->normalizedDestination);
 
-            if (! hash_equals($otp->destination_hash, $destinationHash['hash'])) {
+            $row = FirstFactorOtpCode::query()->whereKey($otpId)->first();
+
+            if ($row instanceof FirstFactorOtpCode && ! hash_equals($row->destination_hash, $destinationHash['hash'])) {
                 throw new InvalidArgumentException('Destination does not match the challenge.');
             }
-        } else {
+        }
+
+        $otp = $this->consume($otpId, $code);
+
+        if (!$destination instanceof OtpDestination) {
             $destination = new OtpDestination($otp->channel, '', $otp->destination_masked);
         }
 
