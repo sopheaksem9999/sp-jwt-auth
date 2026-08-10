@@ -38,5 +38,4 @@ composer.phar
 *.pem
 !tests/Fixtures/keys/*.key
 !tests/Fixtures/keys/*.pem
-.trae/
 .opencode/
