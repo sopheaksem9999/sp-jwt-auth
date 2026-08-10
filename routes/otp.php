@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Sopheak\JwtAuth\DTO\OtpDestination;
 use Sopheak\JwtAuth\Services\FirstFactorOtpBroker;
+use Sopheak\JwtAuth\Support\ResponseEnvelope;
 
 Route::prefix((string) config('sp-jwt-auth.first_factor_otp.route_prefix', 'otp'))->group(function (): void {
     Route::post('/request', static function (Request $request, FirstFactorOtpBroker $broker) {
@@ -30,11 +31,11 @@ Route::prefix((string) config('sp-jwt-auth.first_factor_otp.route_prefix', 'otp'
             return response()->json(['message' => $e->getMessage()], 422);
         }
 
-        return response()->json([
+        return response()->json(ResponseEnvelope::wrap([
             'otp_id' => $dispatch->otpId,
             'destination_masked' => $destination->maskedDestination,
             'expires_in' => (int) config('sp-jwt-auth.first_factor_otp.ttl_minutes', 5) * 60,
-        ], 202);
+        ], (string) config('sp-jwt-auth.first_factor_otp.response_envelope', 'raw')), 202);
     })->middleware('throttle:sp-jwt-ffotp-request');
 
     Route::post('/resend', static function (Request $request, FirstFactorOtpBroker $broker) {
@@ -54,11 +55,11 @@ Route::prefix((string) config('sp-jwt-auth.first_factor_otp.route_prefix', 'otp'
             return response()->json(['message' => $e->getMessage()], 422);
         }
 
-        return response()->json([
+        return response()->json(ResponseEnvelope::wrap([
             'otp_id' => $dispatch->otpId,
             'destination_masked' => $destination->maskedDestination,
             'expires_in' => (int) config('sp-jwt-auth.first_factor_otp.ttl_minutes', 5) * 60,
-        ], 202);
+        ], (string) config('sp-jwt-auth.first_factor_otp.response_envelope', 'raw')), 202);
     })->middleware('throttle:sp-jwt-ffotp-request');
 
     Route::post('/verify', static function (Request $request, FirstFactorOtpBroker $broker) {
@@ -83,11 +84,24 @@ Route::prefix((string) config('sp-jwt-auth.first_factor_otp.route_prefix', 'otp'
             return response()->json(['message' => $e->getMessage()], 422);
         }
 
-        return response()->json([
+        $payload = [
             'access_token' => $verification->pair->accessToken,
             'refresh_token' => $verification->pair->refreshToken,
             'token_type' => 'Bearer',
             'expires_in' => $verification->pair->expiresIn(),
-        ]);
+        ];
+
+        $mode = (string) config('sp-jwt-auth.first_factor_otp.response_envelope', 'raw');
+
+        if ($mode !== 'raw') {
+            $resource = config('sp-jwt-auth.first_factor_otp.user_resource');
+
+            $payload['user'] = ResponseEnvelope::serializeUser(
+                $verification->user,
+                is_string($resource) ? $resource : null,
+            );
+        }
+
+        return response()->json(ResponseEnvelope::wrap($payload, $mode));
     })->middleware('throttle:sp-jwt-ffotp-verify');
 });
