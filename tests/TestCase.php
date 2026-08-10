@@ -52,11 +52,13 @@ abstract class TestCase extends Orchestra
 
         $this->app['db']->connection()->getSchemaBuilder()->create('users', function (Blueprint $table): void {
             $table->id();
-            $table->string('name');
-            $table->string('email')->unique();
+            $table->string('name')->nullable();
+            $table->string('email')->nullable()->unique();
             $table->string('username')->nullable()->unique();
             $table->timestamp('email_verified_at')->nullable();
-            $table->string('password');
+            $table->string('phone')->nullable()->unique();
+            $table->string('type')->nullable();
+            $table->string('password')->nullable();
             $table->timestamps();
         });
     }
