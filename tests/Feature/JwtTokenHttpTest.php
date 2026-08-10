@@ -52,4 +52,23 @@ final class JwtTokenHttpTest extends TestCase
         $this->postJson('/auth/token/refresh', ['refresh_token' => $pair->refreshToken])
             ->assertStatus(401);
     }
+
+    public function test_revoke_endpoint_revokes_whole_session(): void
+    {
+        $user = $this->createUser();
+        $pair = $this->app->make(JwtTokenService::class)->issueTokenPair($user, TokenContext::make());
+
+        $this->withToken($pair->accessToken)
+            ->postJson('/auth/token/revoke')
+            ->assertStatus(200);
+
+        $this->postJson('/auth/token/refresh', ['refresh_token' => $pair->refreshToken])
+            ->assertStatus(401);
+    }
+
+    public function test_revoke_endpoint_requires_authentication(): void
+    {
+        $this->postJson('/auth/token/revoke')
+            ->assertStatus(401);
+    }
 }
