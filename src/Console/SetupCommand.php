@@ -13,6 +13,7 @@ final class SetupCommand extends Command
     protected $signature = 'sp-jwt-auth:setup
         {--keys : Generate local PEM key files after publishing config and migrations}
         {--force : Overwrite published files and generated key files}
+        {--skip-migrations : Do not publish database migrations}
         {--skip-auth-guard : Do not attempt to add the sp-jwt API guard to config/auth.php}';
 
     protected $description = 'Publish sp-jwt-auth client scaffolding and optionally configure the Laravel API guard.';
@@ -27,8 +28,10 @@ final class SetupCommand extends Command
 
         $this->call('vendor:publish', $publishOptions);
 
-        $publishOptions['--tag'] = 'sp-jwt-auth-migrations';
-        $this->call('vendor:publish', $publishOptions);
+        if (! $this->option('skip-migrations')) {
+            $publishOptions['--tag'] = 'sp-jwt-auth-migrations';
+            $this->call('vendor:publish', $publishOptions);
+        }
 
         if (! $this->option('skip-auth-guard')) {
             $this->patchAuthConfig();
