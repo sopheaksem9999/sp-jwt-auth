@@ -110,4 +110,39 @@ final class FirstFactorOtpBrokerTest extends TestCase
 
         $this->broker()->request(OtpDestination::email('a@b.com'), 'register');
     }
+
+    public function test_resend_creates_new_code_and_expires_previous(): void
+    {
+        $first = $this->broker()->request(OtpDestination::phone('+85512345678'), 'login');
+
+        // Deviation (plan owner-approved): the broker enforces a 60s cooldown,
+        // so rewind last_sent_at before resending:
+        FirstFactorOtpCode::query()->whereKey($first->otpId)->update(['last_sent_at' => now()->subMinutes(2)]);
+
+        $resent = $this->broker()->resend($first->otpId, OtpDestination::phone('+85512345678'));
+
+        $this->assertNotSame($first->otpId, $resent->otpId);
+        $this->assertTrue(FirstFactorOtpCode::query()->findOrFail($first->otpId)->expires_at->isPast());
+    }
+
+    public function test_resend_respects_cooldown(): void
+    {
+        $first = $this->broker()->request(OtpDestination::phone('+85512345678'), 'login');
+
+        try {
+            $this->broker()->resend($first->otpId, OtpDestination::phone('+85512345678'));
+            $this->fail('Expected TooManyRequestsHttpException');
+        } catch (TooManyRequestsHttpException $tooManyRequestsHttpException) {
+            $this->assertGreaterThan(0, (int) $tooManyRequestsHttpException->getHeaders()['Retry-After']);
+        }
+    }
+
+    public function test_resend_rejects_mismatched_destination(): void
+    {
+        $first = $this->broker()->request(OtpDestination::phone('+85512345678'), 'login');
+
+        $this->expectException(InvalidArgumentException::class);
+
+        $this->broker()->resend($first->otpId, OtpDestination::phone('+85599999999'));
+    }
 }

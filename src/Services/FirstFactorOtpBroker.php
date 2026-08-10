@@ -13,6 +13,7 @@ use Sopheak\JwtAuth\Contracts\OtpChannelSender;
 use Sopheak\JwtAuth\DTO\OtpDestination;
 use Sopheak\JwtAuth\DTO\OtpDispatch;
 use Sopheak\JwtAuth\Events\OtpCodeCreated;
+use Sopheak\JwtAuth\Events\OtpCodeResent;
 use Sopheak\JwtAuth\Events\OtpCodeSent;
 use Sopheak\JwtAuth\Models\FirstFactorOtpCode;
 use Sopheak\JwtAuth\Security\SecretHasher;
@@ -67,6 +68,29 @@ final readonly class FirstFactorOtpBroker
         }
 
         Event::dispatch(new OtpCodeCreated($dispatch));
+
+        return $dispatch;
+    }
+
+    public function resend(string $otpId, OtpDestination $destination): OtpDispatch
+    {
+        $otp = FirstFactorOtpCode::query()->findOrFail($otpId);
+
+        $destinationHash = $this->hasher->hash($destination->normalizedDestination);
+
+        if (! hash_equals($otp->destination_hash, $destinationHash['hash'])) {
+            throw new InvalidArgumentException('Destination does not match the challenge.');
+        }
+
+        if (! $otp->last_sent_at->addSeconds($this->cooldownSeconds())->isPast()) {
+            $retryAfter = (int) $otp->last_sent_at->addSeconds($this->cooldownSeconds())->diffInSeconds(now(), false);
+
+            throw new TooManyRequestsHttpException(max(1, $retryAfter), 'Too many requests.');
+        }
+
+        $dispatch = $this->request($destination, $otp->purpose, $otp->requested_type);
+
+        Event::dispatch(new OtpCodeResent($dispatch));
 
         return $dispatch;
     }
