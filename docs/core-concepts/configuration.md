@@ -41,6 +41,8 @@ Refresh tokens, OTP codes, verification tokens, reset tokens, API keys, and OAut
 Optional module sections:
 
 - `mfa`
+- `first_factor_otp`
+- `token_endpoints`
 - `email_verification`
 - `password_reset`
 - `api_keys`

@@ -68,3 +68,5 @@ Verification:
 - Locks after max attempts.
 - Marks the challenge completed.
 - Returns the original `TokenContext`.
+
+See also [First-Factor OTP](./first-factor-otp.md)

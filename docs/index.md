@@ -17,12 +17,18 @@ hero:
       link: "https://packagist.org/packages/sopheak/sp-jwt-auth"
 
 features:
+  - title: "JWT Token Endpoints"
+    details: "Ready-made HTTP endpoints for JWT-native refresh rotation and session revocation, with no OAuth client involved."
+    link: "/guide/token-endpoints"
   - title: "Core JWT"
     details: "Laravel sp-jwt guard, signed access tokens, persisted jti rows, opaque rotating refresh tokens, scopes, claims, and revocation."
     link: "/guide/core-jwt"
   - title: "Account Security"
     details: "MFA challenge broker, hashed OTP codes, email verification tokens, and password reset tokens with app-owned delivery."
     link: "/guide/mfa-otp"
+  - title: "First-Factor OTP"
+    details: "Passwordless OTP sign-in and sign-up with hashed code storage, rate limits, and app-owned user creation."
+    link: "/guide/first-factor-otp"
   - title: "SaaS Integrations"
     details: "Scoped API keys with public-id lookup, hashed secret validation, rotation, revocation, and middleware."
     link: "/guide/api-keys"
