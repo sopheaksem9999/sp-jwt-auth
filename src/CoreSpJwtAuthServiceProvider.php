@@ -14,9 +14,11 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
+use Sopheak\JwtAuth\Console\BoostCommand;
 use Sopheak\JwtAuth\Console\InstallCommand;
 use Sopheak\JwtAuth\Console\JwksCommand;
 use Sopheak\JwtAuth\Console\KeysCommand;
+use Sopheak\JwtAuth\Console\McpCommand;
 use Sopheak\JwtAuth\Console\PruneCommand;
 use Sopheak\JwtAuth\Console\SetupCommand;
 use Sopheak\JwtAuth\Console\ValidateCommand;
@@ -137,6 +139,8 @@ final class CoreSpJwtAuthServiceProvider extends ServiceProvider
                 KeysCommand::class,
                 JwksCommand::class,
                 PruneCommand::class,
+                BoostCommand::class,
+                McpCommand::class,
             ]);
         }
     }
