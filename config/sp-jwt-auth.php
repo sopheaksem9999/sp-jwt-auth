@@ -79,11 +79,17 @@ return [
             'sms' => env('SP_JWT_FFOTP_SMS_TEMPLATE', 'Your {app} verification code is {code}. Valid for {ttl} minutes.'),
             'email' => env('SP_JWT_FFOTP_EMAIL_TEMPLATE', 'Your {app} verification code is {code}. Valid for {ttl} minutes.'),
         ],
+        'user_model' => env('SP_JWT_FFOTP_USER_MODEL'),
+        'destination_columns' => ['phone' => 'phone', 'email' => 'email'],
+        'requested_type_column' => env('SP_JWT_FFOTP_REQUESTED_TYPE_COLUMN', 'type'),
+        'response_envelope' => env('SP_JWT_FFOTP_RESPONSE_ENVELOPE', 'raw'),
+        'user_resource' => env('SP_JWT_FFOTP_USER_RESOURCE'),
     ],
 
     'token_endpoints' => [
         'enabled' => filter_var(env('SP_JWT_TOKEN_ENDPOINTS_ENABLED', false), FILTER_VALIDATE_BOOL),
         'route_prefix' => env('SP_JWT_TOKEN_ENDPOINTS_ROUTE_PREFIX', 'auth'),
+        'response_envelope' => env('SP_JWT_TOKEN_ENDPOINTS_RESPONSE_ENVELOPE', 'raw'),
     ],
 
     'email_verification' => [
