@@ -136,4 +136,32 @@ final class FirstFactorOtpHttpTest extends TestCase
             'channel' => 'email',
         ])->assertStatus(422);
     }
+
+    public function test_resend_by_destination_endpoint_issues_new_code(): void
+    {
+        $this->bindResolver($this->createUser());
+
+        $this->postJson('/otp/request', [
+            'destination' => 'user@example.com',
+            'channel' => 'email',
+            'purpose' => 'login',
+        ])->assertStatus(202);
+
+        $this->postJson('/otp/resend-by-destination', [
+            'destination' => 'user@example.com',
+            'channel' => 'email',
+            'purpose' => 'login',
+        ])->assertStatus(202)->assertJsonStructure(['otp_id', 'destination_masked', 'expires_in']);
+    }
+
+    public function test_resend_by_destination_endpoint_rejects_without_active_challenge(): void
+    {
+        $this->bindResolver($this->createUser());
+
+        $this->postJson('/otp/resend-by-destination', [
+            'destination' => 'nobody@example.com',
+            'channel' => 'email',
+            'purpose' => 'login',
+        ])->assertStatus(422);
+    }
 }
