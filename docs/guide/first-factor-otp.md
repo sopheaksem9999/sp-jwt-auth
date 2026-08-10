@@ -38,6 +38,11 @@ SP_JWT_FFOTP_ENABLED=true
 | `first_factor_otp.limits.decay_minutes` | `SP_JWT_FFOTP_LIMIT_DECAY_MINUTES` | `60` | Rate-limit window length in minutes. |
 | `first_factor_otp.message_template.sms` | `SP_JWT_FFOTP_SMS_TEMPLATE` | `Your {app} verification code is {code}. Valid for {ttl} minutes.` | SMS message template. |
 | `first_factor_otp.message_template.email` | `SP_JWT_FFOTP_EMAIL_TEMPLATE` | `Your {app} verification code is {code}. Valid for {ttl} minutes.` | Email message template. |
+| `first_factor_otp.user_model` | `SP_JWT_FFOTP_USER_MODEL` | `null` | User model for the built-in default resolver; setting it binds `DefaultFirstFactorUserResolver`. Unset keeps the module contract-only. |
+| `first_factor_otp.destination_columns` | — | `['phone' => 'phone', 'email' => 'email']` | Column per channel the default resolver queries and fills. |
+| `first_factor_otp.requested_type_column` | `SP_JWT_FFOTP_REQUESTED_TYPE_COLUMN` | `type` | Column the default resolver writes `requested_type` into. |
+| `first_factor_otp.response_envelope` | `SP_JWT_FFOTP_RESPONSE_ENVELOPE` | `raw` | Response wrapping: `raw`, `laravel` (`{"data": ...}`), or a class implementing `Sopheak\JwtAuth\Contracts\ResponseEnvelope`. |
+| `first_factor_otp.user_resource` | `SP_JWT_FFOTP_USER_RESOURCE` | `null` | Invokable class serializing the user in enveloped verify responses; defaults to the model `toArray()`. |
 
 Message templates support the placeholders `{app}`, `{code}`, and `{ttl}`.
 
@@ -74,6 +79,22 @@ $this->app->bind(FirstFactorUserResolver::class, OtpUserResolver::class);
 ```
 
 Return `null` from `create()` to reject sign-up for a destination. After successful verification the broker marks `email_verified_at` or `phone_verified_at` on the user when the column exists.
+
+### Default resolver (no consumer code)
+
+Set `first_factor_otp.user_model` to use the built-in `DefaultFirstFactorUserResolver` — the package binds it automatically and your own binding (if any) still wins:
+
+```php
+'user_model' => App\Models\User::class,           // SP_JWT_FFOTP_USER_MODEL
+'destination_columns' => ['phone' => 'phone', 'email' => 'email'],
+'requested_type_column' => 'type',                // SP_JWT_FFOTP_REQUESTED_TYPE_COLUMN
+```
+
+It resolves users by the destination column (`email` lowercased, `phone` E.164) and creates missing users with `requested_type` written to the configured column. Duplicate-key races re-resolve the existing row; other NOT NULL user columns without defaults must be nullable or have DB defaults. Unmapped or missing columns resolve to `null`.
+
+## Response Envelope
+
+By default (`response_envelope: raw`) responses are unwrapped. Set `laravel` to wrap every payload in `{"data": ...}`, or configure a class implementing `Sopheak\JwtAuth\Contracts\ResponseEnvelope` for a fully custom shape. When the envelope is not `raw`, the `verify` response also includes the authenticated user serialized through `user_resource` (an invokable class receiving the user) or the model `toArray()` (respects `$hidden`).
 
 ## Deliver Codes
 
@@ -115,7 +136,10 @@ Routes register under `first_factor_otp.route_prefix` (default `otp`) only when 
 | --- | --- | --- | --- | --- |
 | `POST` | `/otp/request` | none | `destination`, `channel` (`email`/`sms`), `purpose`, optional `requested_type` | `202` — `{otp_id, destination_masked, expires_in}` |
 | `POST` | `/otp/resend` | none | `otp_id`, `destination`, `channel` | `202` — `{otp_id, destination_masked, expires_in}` |
+| `POST` | `/otp/resend-by-destination` | none | `destination`, `channel`, `purpose` | `202` — `{otp_id, destination_masked, expires_in}` |
 | `POST` | `/otp/verify` | none | `otp_id`, `code`, optional `destination` + `channel` | `200` — `{access_token, refresh_token, token_type, expires_in}` |
+
+`/otp/resend-by-destination` re-issues the latest active challenge for the destination and purpose, inheriting its `requested_type` and sharing the same cooldown and rate limits — it responds `422` when no active challenge exists.
 
 The plaintext code is never returned by an endpoint. `request` and `resend` share a cooldown and per-destination/per-IP rate limits; `verify` is rate limited per IP. Limits respond with `429` and a `Retry-After` header. Client errors such as an unknown purpose (when a purpose allowlist is configured) or a destination mismatch map to `422`.
 

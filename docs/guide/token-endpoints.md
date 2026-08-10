@@ -23,6 +23,7 @@ SP_JWT_TOKEN_ENDPOINTS_ENABLED=true
 | --- | --- | --- | --- |
 | `token_endpoints.enabled` | `SP_JWT_TOKEN_ENDPOINTS_ENABLED` | `false` | Enable the module and register its routes. |
 | `token_endpoints.route_prefix` | `SP_JWT_TOKEN_ENDPOINTS_ROUTE_PREFIX` | `auth` | URL prefix for the token routes. |
+| `token_endpoints.response_envelope` | `SP_JWT_TOKEN_ENDPOINTS_RESPONSE_ENVELOPE` | `raw` | Response wrapping: `raw`, `laravel` (`{"data": ...}`), or a class implementing `Sopheak\JwtAuth\Contracts\ResponseEnvelope`. |
 
 ## Refresh a Token
 
