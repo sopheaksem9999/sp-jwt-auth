@@ -38,11 +38,13 @@ Public links:
 ## Optional Modules
 
 - [MFA and OTP](./guide/mfa-otp.md)
+- [First-Factor OTP](./guide/first-factor-otp.md)
 - [Email Verification](./guide/email-verification.md)
 - [Password Reset Tokens](./guide/password-reset.md)
 - [API Keys](./guide/api-keys.md)
 - [External Identity](./guide/external-identity.md)
 - [OAuth Server](./guide/oauth-server.md)
+- [JWT Token Endpoints](./guide/token-endpoints.md)
 
 ## Integration and Maintenance
 

@@ -301,7 +301,7 @@ final readonly class JwtTokenService
     {
         $parts = explode('.', $refreshToken, 2);
 
-        if (count($parts) !== 2 || $parts[0] === '' || $parts[1] === '') {
+        if (count($parts) !== 2 || $parts[0] === '' || $parts[1] === '' || ! Str::isUuid($parts[0])) {
             throw new AuthenticationException('Unauthenticated.');
         }
 

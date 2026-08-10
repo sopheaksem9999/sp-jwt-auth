@@ -177,7 +177,7 @@ final readonly class OAuthServerService
         return new OAuthPrincipal(
             clientId: $row->client_id,
             userType: $row->user_type,
-            userId: $row->user_id,
+            userId: $row->user_id === null ? null : (string) $row->user_id,
             grantType: $row->grant_type,
             scopes: $row->scopes ?? [],
             claims: $row->claims ?? [],
@@ -208,7 +208,7 @@ final readonly class OAuthServerService
 
                 $row->forceFill(['revoked_at' => now()])->save();
 
-                return $this->issueTokenPair($client, 'authorization_code', $row->scopes ?? [], $row->claims ?? [], $row->user_type, $row->user_id);
+                return $this->issueTokenPair($client, 'authorization_code', $row->scopes ?? [], $row->claims ?? [], $row->user_type, $row->user_id === null ? null : (string) $row->user_id);
             }
 
             throw new AuthenticationException('OAuth authorization code is invalid.');

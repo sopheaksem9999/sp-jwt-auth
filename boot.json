@@ -1,0 +1,55 @@
+{
+    "name": "sopheak/sp-jwt-auth",
+    "description": "First-party JWT access and rotating refresh token authentication for Laravel apps.",
+    "composer": "sopheak/sp-jwt-auth:^0.1",
+    "php": "^8.3|^8.4|^8.5",
+    "laravel": "^12.0|^13.0",
+    "setup": [
+        {
+            "name": "publish-and-configure",
+            "command": "php artisan sp-jwt-auth:setup --keys",
+            "note": "Publishes config and migrations, adds the sp-jwt API guard to config/auth.php, generates local PEM signing keys, and ensures SP_JWT_REFRESH_HASH_KEY is set in .env."
+        },
+        {
+            "name": "migrate",
+            "command": "php artisan migrate",
+            "note": "Creates the sp_jwt_access_tokens, sp_jwt_refresh_tokens, and account security tables."
+        },
+        {
+            "name": "verify",
+            "command": "php artisan sp-jwt-auth:validate --json",
+            "note": "Exits 0 with {\"status\":\"ok\"} when the client app is correctly configured, or 1 with a JSON list of errors. Use --fix to attempt safe repairs."
+        }
+    ],
+    "optional_modules": [
+        {
+            "name": "api-keys",
+            "note": "API key authentication. Enable the AuthenticateApiKey middleware and sp-jwt-auth.api_keys.enabled config."
+        },
+        {
+            "name": "first-factor-otp",
+            "note": "First-factor OTP sign-in/sign-up via SMS or email. Enable sp-jwt-auth.first_factor_otp.enabled and implement the FirstFactorUserResolver contract."
+        },
+        {
+            "name": "oauth",
+            "note": "OAuth2 authorization server (league/oauth2-server). Requires the suggested league/oauth2-server package."
+        },
+        {
+            "name": "socialite",
+            "note": "External identity / social login (laravel/socialite). Requires the suggested laravel/socialite package."
+        },
+        {
+            "name": "mfa",
+            "note": "Multi-factor and OTP challenges. Enable sp-jwt-auth.mfa.enabled / sp-jwt-auth.otp.enabled config."
+        }
+    ],
+    "required_env": [
+        "SP_JWT_REFRESH_HASH_KEY"
+    ],
+    "docs": [
+        "AGENTS.md",
+        "docs/ai/client-install.md",
+        "guidelines/sp-jwt-auth.md",
+        "skills/sp-jwt-auth/SKILL.md"
+    ]
+}

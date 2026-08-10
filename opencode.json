@@ -5,8 +5,7 @@
     "docs/ai/coding-standards.md",
     "docs/ai/architecture.md",
     "docs/ai/project-context.md",
-    "docs/ai/commands.md",
-    ".trae/rules/project_rules.md"
+    "docs/ai/commands.md"
   ],
   "command": {
     "/test": {
@@ -40,7 +39,7 @@
     }
   },
   "skills": {
-    "paths": [".opencode/skills", ".trae/skills"]
+    "paths": [".opencode/skills"]
   },
   "formatter": {
     "php": {

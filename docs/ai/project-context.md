@@ -5,7 +5,7 @@
 - Package: `sopheak/sp-jwt-auth`.
 - Stack: PHP 8.3+, Laravel 12/13, `firebase/php-jwt`, Orchestra Testbench, PHPUnit.
 - Goal: Modular Laravel authentication infrastructure with first-party JWT, account security brokers, API keys, external identity storage, and optional OAuth server mode.
-- Non-goals: Password login, registration, tenant rules, role assignment, UI, provider-specific Social/OIDC controller flows, and app-owned OAuth consent screens.
+- Non-goals: Password login, registration, tenant rules, role assignment, UI, provider-specific Social/OIDC controller flows, and app-owned OAuth consent screens. Exception: first-factor OTP sign-in/sign-up (config-gated; user creation delegated to the app via FirstFactorUserResolver).
 
 ## Repo Map
 - `src/`: Package source.

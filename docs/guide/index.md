@@ -42,6 +42,8 @@ description: "Feature-by-feature guide for sopheak/sp-jwt-auth."
 - [Password Reset Tokens](../features/password-reset.md)
 - [API Keys](../features/api-keys.md)
 - [External Identity](../features/external-identity.md)
+- [First-Factor OTP](../features/first-factor-otp.md)
+- [JWT Token Endpoints](../features/token-endpoints.md)
 - [OAuth Server](../features/oauth-server.md)
 - [Events and Hooks](../features/events-hooks.md)
 - [Middleware](../features/middleware.md)

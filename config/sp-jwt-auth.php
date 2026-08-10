@@ -6,6 +6,7 @@ return [
     'guard' => env('SP_JWT_GUARD', 'api'),
     'driver' => env('SP_JWT_DRIVER', 'sp-jwt'),
     'user_provider' => env('SP_JWT_USER_PROVIDER', 'users'),
+    'id_type' => env('SP_JWT_ID_TYPE', 'integer'),
 
     'issuer' => env('SP_JWT_ISSUER', env('APP_URL')),
     'audience' => env('SP_JWT_AUDIENCE'),
@@ -54,6 +55,41 @@ return [
             'max_attempts' => (int) env('SP_JWT_OTP_MAX_ATTEMPTS', 5),
             'resend_cooldown_seconds' => (int) env('SP_JWT_OTP_RESEND_COOLDOWN_SECONDS', 60),
         ],
+    ],
+
+    'first_factor_otp' => [
+        'enabled' => filter_var(env('SP_JWT_FFOTP_ENABLED', false), FILTER_VALIDATE_BOOL),
+        'route_prefix' => env('SP_JWT_FFOTP_ROUTE_PREFIX', 'otp'),
+        'digits' => (int) env('SP_JWT_FFOTP_DIGITS', 6),
+        'ttl_minutes' => (int) env('SP_JWT_FFOTP_TTL_MINUTES', 5),
+        'max_attempts' => (int) env('SP_JWT_FFOTP_MAX_ATTEMPTS', 5),
+        'resend_cooldown_seconds' => (int) env('SP_JWT_FFOTP_RESEND_COOLDOWN_SECONDS', 60),
+        'default_scopes' => ['*'],
+        'purposes' => [],
+        'requested_types' => [],
+        'test_mode' => filter_var(env('SP_JWT_FFOTP_TEST_MODE', false), FILTER_VALIDATE_BOOL),
+        'test_code' => env('SP_JWT_FFOTP_TEST_CODE'),
+        'limits' => [
+            'request_per_destination' => (int) env('SP_JWT_FFOTP_LIMIT_REQUEST_DESTINATION', 5),
+            'request_per_ip' => (int) env('SP_JWT_FFOTP_LIMIT_REQUEST_IP', 20),
+            'verify_per_ip' => (int) env('SP_JWT_FFOTP_LIMIT_VERIFY_IP', 30),
+            'decay_minutes' => (int) env('SP_JWT_FFOTP_LIMIT_DECAY_MINUTES', 60),
+        ],
+        'message_template' => [
+            'sms' => env('SP_JWT_FFOTP_SMS_TEMPLATE', 'Your {app} verification code is {code}. Valid for {ttl} minutes.'),
+            'email' => env('SP_JWT_FFOTP_EMAIL_TEMPLATE', 'Your {app} verification code is {code}. Valid for {ttl} minutes.'),
+        ],
+        'user_model' => env('SP_JWT_FFOTP_USER_MODEL'),
+        'destination_columns' => ['phone' => 'phone', 'email' => 'email'],
+        'requested_type_column' => env('SP_JWT_FFOTP_REQUESTED_TYPE_COLUMN', 'type'),
+        'response_envelope' => env('SP_JWT_FFOTP_RESPONSE_ENVELOPE', 'raw'),
+        'user_resource' => env('SP_JWT_FFOTP_USER_RESOURCE'),
+    ],
+
+    'token_endpoints' => [
+        'enabled' => filter_var(env('SP_JWT_TOKEN_ENDPOINTS_ENABLED', false), FILTER_VALIDATE_BOOL),
+        'route_prefix' => env('SP_JWT_TOKEN_ENDPOINTS_ROUTE_PREFIX', 'auth'),
+        'response_envelope' => env('SP_JWT_TOKEN_ENDPOINTS_RESPONSE_ENVELOPE', 'raw'),
     ],
 
     'email_verification' => [
