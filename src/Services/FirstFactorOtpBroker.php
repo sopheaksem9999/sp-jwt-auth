@@ -106,6 +106,17 @@ final readonly class FirstFactorOtpBroker
         return $dispatch;
     }
 
+    public function resendByDestination(OtpDestination $destination, string $purpose): OtpDispatch
+    {
+        $otp = $this->latestActive($destination, $purpose);
+
+        if (! $otp instanceof FirstFactorOtpCode) {
+            throw new InvalidArgumentException('No active challenge for destination and purpose.');
+        }
+
+        return $this->resend($otp->id, $destination);
+    }
+
     public function verify(string $otpId, string $code, ?OtpDestination $destination = null): FirstFactorVerification
     {
         if ($destination instanceof OtpDestination) {

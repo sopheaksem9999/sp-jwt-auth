@@ -274,4 +274,44 @@ final class FirstFactorOtpBrokerTest extends TestCase
 
         $this->assertNotEmpty($verification->pair->accessToken);
     }
+
+    public function test_resend_by_destination_inherits_requested_type(): void
+    {
+        $dispatch = $this->broker()->request(OtpDestination::email('a@b.com'), 'login', 'driver');
+
+        FirstFactorOtpCode::query()->whereKey($dispatch->otpId)->update(['last_sent_at' => now()->subMinutes(2)]);
+
+        $resent = $this->broker()->resendByDestination(OtpDestination::email('a@b.com'), 'login');
+
+        $this->assertNotSame($dispatch->otpId, $resent->otpId);
+        $this->assertSame('driver', FirstFactorOtpCode::query()->findOrFail($resent->otpId)->requested_type);
+    }
+
+    public function test_resend_by_destination_shares_cooldown(): void
+    {
+        $this->broker()->request(OtpDestination::email('a@b.com'), 'login');
+
+        try {
+            $this->broker()->resendByDestination(OtpDestination::email('a@b.com'), 'login');
+            $this->fail('Expected TooManyRequestsHttpException');
+        } catch (TooManyRequestsHttpException $tooManyRequestsHttpException) {
+            $this->assertGreaterThan(0, (int) $tooManyRequestsHttpException->getHeaders()['Retry-After']);
+        }
+    }
+
+    public function test_resend_by_destination_without_active_challenge_throws(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+
+        $this->broker()->resendByDestination(OtpDestination::email('nobody@example.com'), 'login');
+    }
+
+    public function test_resend_by_destination_ignores_other_purpose(): void
+    {
+        $this->broker()->request(OtpDestination::email('a@b.com'), 'login');
+
+        $this->expectException(InvalidArgumentException::class);
+
+        $this->broker()->resendByDestination(OtpDestination::email('a@b.com'), 'register');
+    }
 }
