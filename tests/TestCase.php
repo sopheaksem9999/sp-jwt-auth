@@ -55,6 +55,7 @@ abstract class TestCase extends Orchestra
             $table->string('name');
             $table->string('email')->unique();
             $table->string('username')->nullable()->unique();
+            $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
             $table->timestamps();
         });

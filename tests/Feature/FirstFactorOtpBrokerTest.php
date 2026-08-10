@@ -6,6 +6,7 @@ namespace Sopheak\JwtAuth\Tests\Feature;
 
 use Closure;
 use InvalidArgumentException;
+use Illuminate\Auth\AuthenticationException;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Sopheak\JwtAuth\Contracts\FirstFactorUserResolver;
 use Sopheak\JwtAuth\DTO\OtpDestination;
@@ -144,5 +145,125 @@ final class FirstFactorOtpBrokerTest extends TestCase
         $this->expectException(InvalidArgumentException::class);
 
         $this->broker()->resend($first->otpId, OtpDestination::phone('+85599999999'));
+    }
+
+    public function test_verify_signs_in_existing_user_and_issues_token_pair(): void
+    {
+        $user = $this->createUser();
+        $this->bindResolver(existing: $user);
+
+        $dispatch = $this->broker()->request(OtpDestination::email('a@b.com'), 'login');
+
+        $verification = $this->broker()->verify($dispatch->otpId, $dispatch->plaintextCode);
+
+        $this->assertSame($user->getAuthIdentifier(), $verification->user->getAuthIdentifier());
+        $this->assertNotEmpty($verification->pair->accessToken);
+        $this->assertNotEmpty($verification->pair->refreshToken);
+        $this->assertNotNull(FirstFactorOtpCode::query()->findOrFail($dispatch->otpId)->verified_at);
+    }
+
+    public function test_verify_creates_user_when_none_exists_and_marks_email_verified(): void
+    {
+        $this->bindResolver(creator: function (OtpDestination $destination): User {
+            $user = new User();
+            $user->forceFill([
+                'name' => 'New User',
+                'email' => $destination->normalizedDestination,
+                'password' => bcrypt('unused'),
+            ])->save();
+
+            return $user;
+        });
+
+        $dispatch = $this->broker()->request(OtpDestination::email('new@example.com'), 'login', 'driver');
+
+        // Deviation D: pass the plaintext destination so the resolver can create the user:
+        $verification = $this->broker()->verify($dispatch->otpId, $dispatch->plaintextCode, OtpDestination::email('new@example.com'));
+
+        $this->assertSame('new@example.com', $verification->user->getAttribute('email'));
+        $this->assertNotNull($verification->user->getAttribute('email_verified_at'));
+        $this->assertNotEmpty($verification->pair->accessToken);
+    }
+
+    public function test_verify_wrong_code_increments_attempts_and_fails(): void
+    {
+        $this->bindResolver(existing: $this->createUser());
+
+        $dispatch = $this->broker()->request(OtpDestination::email('a@b.com'), 'login');
+
+        try {
+            $this->broker()->verify($dispatch->otpId, '000000');
+            $this->fail('Expected AuthenticationException');
+        } catch (AuthenticationException) {
+        }
+
+        $this->assertSame(1, FirstFactorOtpCode::query()->findOrFail($dispatch->otpId)->attempts);
+        $this->assertNull(FirstFactorOtpCode::query()->findOrFail($dispatch->otpId)->verified_at);
+    }
+
+    public function test_verify_locks_after_max_attempts(): void
+    {
+        $this->bindResolver(existing: $this->createUser());
+
+        $dispatch = $this->broker()->request(OtpDestination::email('a@b.com'), 'login');
+
+        for ($i = 0; $i < 5; $i++) {
+            try {
+                $this->broker()->verify($dispatch->otpId, '000000');
+            } catch (AuthenticationException) {
+            }
+        }
+
+        $this->expectException(AuthenticationException::class);
+
+        $this->broker()->verify($dispatch->otpId, $dispatch->plaintextCode);
+    }
+
+    public function test_verify_expired_code_fails(): void
+    {
+        $this->bindResolver(existing: $this->createUser());
+
+        $dispatch = $this->broker()->request(OtpDestination::email('a@b.com'), 'login');
+
+        FirstFactorOtpCode::query()->whereKey($dispatch->otpId)->update(['expires_at' => now()->subMinute()]);
+
+        $this->expectException(AuthenticationException::class);
+
+        $this->broker()->verify($dispatch->otpId, $dispatch->plaintextCode);
+    }
+
+    public function test_verify_second_verification_against_same_challenge_fails(): void
+    {
+        $this->bindResolver(existing: $this->createUser());
+
+        $dispatch = $this->broker()->request(OtpDestination::email('a@b.com'), 'login');
+
+        $this->broker()->verify($dispatch->otpId, $dispatch->plaintextCode);
+
+        $this->expectException(AuthenticationException::class);
+
+        $this->broker()->verify($dispatch->otpId, $dispatch->plaintextCode);
+    }
+
+    public function test_verify_rejects_when_resolver_returns_no_user(): void
+    {
+        $this->bindResolver();
+
+        $dispatch = $this->broker()->request(OtpDestination::email('a@b.com'), 'login');
+
+        $this->expectException(AuthenticationException::class);
+
+        $this->broker()->verify($dispatch->otpId, $dispatch->plaintextCode);
+    }
+
+    public function test_verify_rejects_mismatched_destination(): void
+    {
+        $this->bindResolver(existing: $this->createUser());
+
+        $dispatch = $this->broker()->request(OtpDestination::email('a@b.com'), 'login');
+
+        $this->expectException(InvalidArgumentException::class);
+
+        $this->broker()->verify($dispatch->otpId, $dispatch->plaintextCode, OtpDestination::email('other@example.com'));
     }
 }
