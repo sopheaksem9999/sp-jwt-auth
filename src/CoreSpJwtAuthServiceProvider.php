@@ -6,10 +6,12 @@ namespace Sopheak\JwtAuth;
 
 use Override;
 use Illuminate\Auth\AuthManager;
+use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use Sopheak\JwtAuth\Console\InstallCommand;
@@ -120,6 +122,9 @@ final class CoreSpJwtAuthServiceProvider extends ServiceProvider
             Route::group([], __DIR__ . '/../routes/oauth.php');
         }
 
+        $this->registerFirstFactorOtpRateLimiters();
+        $this->registerFirstFactorOtpRoutes();
+
         if ($this->app->runningInConsole()) {
             $this->commands([
                 InstallCommand::class,
@@ -130,5 +135,39 @@ final class CoreSpJwtAuthServiceProvider extends ServiceProvider
                 PruneCommand::class,
             ]);
         }
+    }
+
+    private function registerFirstFactorOtpRateLimiters(): void
+    {
+        RateLimiter::for('sp-jwt-ffotp-request', function (Request $request): array {
+            $decay = (int) config('sp-jwt-auth.first_factor_otp.limits.decay_minutes', 60);
+
+            $destination = strtolower((string) $request->input('destination', 'unknown'));
+
+            return [
+                Limit::perMinutes($decay, (int) config('sp-jwt-auth.first_factor_otp.limits.request_per_destination', 5))
+                    ->by('sp-jwt-ffotp-destination:' . $destination),
+                Limit::perMinutes($decay, (int) config('sp-jwt-auth.first_factor_otp.limits.request_per_ip', 20))
+                    ->by('sp-jwt-ffotp-ip:' . $request->ip()),
+            ];
+        });
+
+        RateLimiter::for('sp-jwt-ffotp-verify', function (Request $request): array {
+            $decay = (int) config('sp-jwt-auth.first_factor_otp.limits.decay_minutes', 60);
+
+            return [
+                Limit::perMinutes($decay, (int) config('sp-jwt-auth.first_factor_otp.limits.verify_per_ip', 30))
+                    ->by('sp-jwt-ffotp-verify-ip:' . $request->ip()),
+            ];
+        });
+    }
+
+    private function registerFirstFactorOtpRoutes(): void
+    {
+        if (! (bool) config('sp-jwt-auth.first_factor_otp.enabled', false)) {
+            return;
+        }
+
+        Route::group([], __DIR__ . '/../routes/otp.php');
     }
 }
