@@ -22,6 +22,7 @@ use Sopheak\JwtAuth\Console\McpCommand;
 use Sopheak\JwtAuth\Console\PruneCommand;
 use Sopheak\JwtAuth\Console\SetupCommand;
 use Sopheak\JwtAuth\Console\ValidateCommand;
+use Sopheak\JwtAuth\Contracts\FirstFactorUserResolver;
 use Sopheak\JwtAuth\Http\Middleware\AuthenticateOAuthToken;
 use Sopheak\JwtAuth\Http\Middleware\AuthenticateApiKey;
 use Sopheak\JwtAuth\Http\Middleware\AuthenticateJwt;
@@ -36,6 +37,7 @@ use Sopheak\JwtAuth\Http\Middleware\RequireOAuthScope;
 use Sopheak\JwtAuth\Security\HashKeyRepository;
 use Sopheak\JwtAuth\Security\SecretHasher;
 use Sopheak\JwtAuth\Services\ApiKeyService;
+use Sopheak\JwtAuth\Services\DefaultFirstFactorUserResolver;
 use Sopheak\JwtAuth\Services\EmailVerificationBroker;
 use Sopheak\JwtAuth\Services\ExternalIdentityStore;
 use Sopheak\JwtAuth\Services\JwtTokenService;
@@ -88,6 +90,10 @@ final class CoreSpJwtAuthServiceProvider extends ServiceProvider
         $this->publishes([
             __DIR__ . '/../database/migrations' => database_path('migrations'),
         ], 'sp-jwt-auth-migrations');
+
+        if (config('sp-jwt-auth.first_factor_otp.user_model') !== null) {
+            $this->app->bind(FirstFactorUserResolver::class, DefaultFirstFactorUserResolver::class);
+        }
 
         Auth::extend('sp-jwt', function (Application $app, string $name, array $config): JwtGuard {
             $providerName = $config['provider'] ?? config('sp-jwt-auth.user_provider', 'users');
