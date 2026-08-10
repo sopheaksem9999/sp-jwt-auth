@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Sopheak\JwtAuth\Support\UserIdColumn;
 
 return new class extends Migration {
     public function up(): void
@@ -13,7 +14,7 @@ return new class extends Migration {
             $table->uuid('id')->primary();
             $table->uuid('access_token_id');
             $table->string('user_type');
-            $table->string('user_id', 64);
+            UserIdColumn::apply($table);
             $table->uuid('session_id')->index('sp_jwt_refresh_tokens_session_index');
             $table->string('secret_hash', 128);
             $table->string('hash_key_id', 100)->nullable()->index('sp_jwt_refresh_tokens_hash_key_index');

@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Sopheak\JwtAuth\Support\UserIdColumn;
 
 return new class extends Migration {
     public function up(): void
@@ -31,7 +32,7 @@ return new class extends Migration {
             $table->uuid('id')->primary();
             $table->uuid('client_id');
             $table->string('user_type');
-            $table->string('user_id', 64);
+            UserIdColumn::apply($table);
             $table->json('scopes');
             $table->timestamp('revoked_at')->nullable()->index('sp_oauth_consents_revoked_index');
             $table->timestamps();
@@ -42,7 +43,7 @@ return new class extends Migration {
             $table->uuid('id')->primary();
             $table->uuid('client_id')->index('sp_oauth_auth_codes_client_index');
             $table->string('user_type');
-            $table->string('user_id', 64);
+            UserIdColumn::apply($table);
             $table->string('code_hash', 128);
             $table->string('hash_key_id', 100)->nullable()->index('sp_oauth_auth_codes_hash_key_index');
             $table->string('redirect_uri', 2048);
@@ -59,7 +60,7 @@ return new class extends Migration {
             $table->uuid('id')->primary();
             $table->uuid('client_id')->index('sp_oauth_access_tokens_client_index');
             $table->string('user_type')->nullable();
-            $table->string('user_id', 64)->nullable();
+            UserIdColumn::apply($table, nullable: true);
             $table->string('grant_type', 80);
             $table->string('public_id', 80)->unique('sp_oauth_access_tokens_public_unique');
             $table->string('secret_hash', 128);
@@ -78,7 +79,7 @@ return new class extends Migration {
             $table->uuid('access_token_id')->index('sp_oauth_refresh_tokens_access_index');
             $table->uuid('client_id')->index('sp_oauth_refresh_tokens_client_index');
             $table->string('user_type')->nullable();
-            $table->string('user_id', 64)->nullable();
+            UserIdColumn::apply($table, nullable: true);
             $table->string('public_id', 80)->unique('sp_oauth_refresh_tokens_public_unique');
             $table->string('secret_hash', 128);
             $table->string('hash_key_id', 100)->nullable()->index('sp_oauth_refresh_tokens_hash_key_index');

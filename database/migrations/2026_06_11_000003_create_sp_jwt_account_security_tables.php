@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Sopheak\JwtAuth\Support\UserIdColumn;
 
 return new class extends Migration {
     public function up(): void
@@ -12,7 +13,7 @@ return new class extends Migration {
         Schema::create('sp_jwt_mfa_challenges', function (Blueprint $table): void {
             $table->uuid('id')->primary();
             $table->string('user_type');
-            $table->string('user_id', 64);
+            UserIdColumn::apply($table);
             $table->uuid('session_id')->index('sp_jwt_mfa_challenges_session_index');
             $table->json('context');
             $table->json('methods');
@@ -43,7 +44,7 @@ return new class extends Migration {
         Schema::create('sp_jwt_email_verification_tokens', function (Blueprint $table): void {
             $table->uuid('id')->primary();
             $table->string('user_type');
-            $table->string('user_id', 64);
+            UserIdColumn::apply($table);
             $table->string('email_hash', 128)->index('sp_jwt_email_verification_tokens_email_index');
             $table->string('email_masked');
             $table->string('token_hash', 128);
@@ -59,7 +60,7 @@ return new class extends Migration {
         Schema::create('sp_jwt_password_reset_tokens', function (Blueprint $table): void {
             $table->uuid('id')->primary();
             $table->string('user_type');
-            $table->string('user_id', 64);
+            UserIdColumn::apply($table);
             $table->string('email_hash', 128)->index('sp_jwt_password_reset_tokens_email_index');
             $table->string('email_masked');
             $table->string('token_hash', 128);
