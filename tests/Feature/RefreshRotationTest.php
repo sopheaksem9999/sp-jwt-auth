@@ -43,4 +43,11 @@ final class RefreshRotationTest extends TestCase
 
         $service->rotateRefreshToken($first->refreshToken);
     }
+
+    public function test_rotating_refresh_token_with_non_uuid_id_returns_401_not_500(): void
+    {
+        $this->expectException(AuthenticationException::class);
+
+        $this->app->make(JwtTokenService::class)->rotateRefreshToken('not-a-real-token.at-all');
+    }
 }
