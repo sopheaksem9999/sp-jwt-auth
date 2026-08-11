@@ -38,6 +38,7 @@ Package Artisan commands: `sp-jwt-auth:install --keys`, `sp-jwt-auth:setup --key
 
 - Never use `APP_KEY` as JWT signing key.
 - Never log tokens, secrets, or private keys.
+- Never put tokens, secrets, or client data in task-progress artifacts (todo items, session summaries, compaction summaries, commit messages) — same rule as logs; `share` is disabled in `opencode.json` for this reason.
 - Hash refresh tokens with HMAC + stored `hash_key_id`; use timing-safe comparisons.
 - Refresh rotation inside a DB transaction (detect reuse).
 - User ownership via `user_type` + `user_id` (polymorphic), not foreign keys.

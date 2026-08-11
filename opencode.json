@@ -29,7 +29,7 @@
   },
   "agent": {
     "general": {
-      "steps": 30
+      "steps": 50
     },
     "explore": {
       "steps": 15
@@ -50,14 +50,15 @@
   },
   "compaction": {
     "auto": true,
-    "tail_turns": 4
+    "prune": true,
+    "tail_turns": 10
   },
+  "share": "disabled",
   "permission": {
     "bash": {
       "composer *": "allow",
       "php artisan *": "allow",
       "git *": "allow",
-      "graphify *": "allow",
       "*": "ask"
     },
     "edit": "allow",
