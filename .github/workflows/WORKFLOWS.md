@@ -136,7 +136,7 @@ The checkout always uses `head_sha` from the CI run. Release then queries GitHub
 
 Runs when CI passed on `main` and Security also passed for the same commit.
 
-1. Reads the version from `VERSION` or falls back to `composer.json` (`version` field).
+1. Reads the version from `VERSION` (falls back to `composer.json` `version` field, which is no longer present in this repo).
 2. Validates strict semver format `X.Y.Z` — rejects any string with shell metacharacters.
 3. Skips silently if the tag already exists (idempotent).
 4. Creates a git tag and pushes it.
