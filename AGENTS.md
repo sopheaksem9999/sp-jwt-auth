@@ -11,7 +11,7 @@
 - `src/` has real code (Console, Contracts, DTO, Events, Guards, Http, Models, Security, Services, Signing, Support, Testing, Traits)
 - `tests/` has Unit + Feature tests + TestCase base class; `tests/Fixtures/keys/*.pem` are committed test-only keys
 - Active branch is `develop`; `main` is the release branch (CI runs `composer quality` on both, PHP 8.3/8.4)
-- Version is bumped in lockstep across `composer.json` `version`, `VERSION`, and `CHANGELOG.md` (currently 0.1.18, uncommitted work-in-progress)
+- Version is bumped in lockstep across `composer.json` `version`, `VERSION`, and `CHANGELOG.md` (currently 0.1.20)
 - `composer.lock` is gitignored — installs float on latest deps (CI runs `composer update`)
 
 ## Commands
