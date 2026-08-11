@@ -46,19 +46,19 @@ Package Artisan commands: `sp-jwt-auth:install --keys`, `sp-jwt-auth:setup --key
 
 ## Instruction Files
 
-These are loaded via `opencode.json` and provide deeper context:
+These live in `.opencode/rules/` (local, gitignored — not shipped with the package) and are loaded via `opencode.json`:
 
-- `docs/ai/coding-standards.md` — security rules, package conventions, testing expectations
-- `docs/ai/architecture.md` — core flow, storage tables, security boundaries
-- `docs/ai/project-context.md` — repo map, implemented scope (v1.0 Core JWT → v2.1 OAuth), non-goals
-- `docs/ai/commands.md` — full command list with examples
+- `.opencode/rules/coding-standards.md` — security rules, package conventions, testing expectations
+- `.opencode/rules/architecture.md` — core flow, storage tables, security boundaries
+- `.opencode/rules/project-context.md` — repo map, implemented scope (v1.0 Core JWT → v2.1 OAuth), non-goals
+- `.opencode/rules/commands.md` — full command list with examples
 
 ## Client-side / Boot
 
 - `boot.json` — machine-readable install/setup/verify steps for Laravel Boot and other agents scaffolding client apps.
 - `guidelines/sp-jwt-auth.md` — Boost auto-detect guidelines for agents working with the package in client apps.
 - `skills/sp-jwt-auth/SKILL.md` — agentskills.io-format skill; installs into client `.agents/skills/` via `sp-jwt-auth:boost`.
-- `docs/ai/client-install.md` — step-by-step client installation guide for agents (publish, configure, migrate, validate, User model trait, optional modules).
+- `docs/client-install.md` — step-by-step client installation guide for agents (publish, configure, migrate, validate, User model trait, optional modules).
 - `sp-jwt-auth:boost` — wires guidelines/skill into the client, registers the Boost skill in `boost.json` and the MCP server in `.mcp.json`.
 - `sp-jwt-auth:mcp` — MCP stdio server (read-only `validate`, `jwks`, `config` tools; secrets never exposed).
 - Optional `first_factor_otp` module — `FirstFactorOtpBroker` + `FirstFactorUserResolver` contract + `routes/otp.php` (config-gated).

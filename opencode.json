@@ -2,10 +2,7 @@
   "$schema": "https://opencode.ai/config.json",
   "instructions": [
     "AGENTS.md",
-    "docs/ai/coding-standards.md",
-    "docs/ai/architecture.md",
-    "docs/ai/project-context.md",
-    "docs/ai/commands.md"
+    ".opencode/rules/*.md"
   ],
   "command": {
     "/test": {
