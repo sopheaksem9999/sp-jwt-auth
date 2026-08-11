@@ -9,6 +9,7 @@ All notable changes to `sopheak/sp-jwt-auth` will be documented in this file.
 
 ### Changed
 - Agent-facing context moved out of the shipped package: the four agent context docs are now local `.opencode/rules/*.md` (gitignored, loaded via `opencode.json`); the client installation guide moved from `docs/ai/client-install.md` to `docs/client-install.md` (references updated in `boot.json`, `guidelines/sp-jwt-auth.md`, `skills/sp-jwt-auth/SKILL.md`, `AGENTS.md`).
+- Dependencies: `firebase/php-jwt` constraint tightened to `^7.0` (drops the vulnerable `<7.0.0` range from the Dependabot advisory); float updates pull patched `guzzlehttp/guzzle` 7.15.2 and `league/commonmark` 2.9.2, clearing all `composer audit` advisories.
 
 ## [0.1.19] - 2026-08-10
 
