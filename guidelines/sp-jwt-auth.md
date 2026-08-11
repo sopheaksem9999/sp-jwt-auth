@@ -6,7 +6,7 @@ Guidelines for agents working with applications that use `sopheak/sp-jwt-auth`.
 
 - Package: `sopheak/sp-jwt-auth` — first-party JWT access and rotating refresh token authentication for Laravel 12/13 (PHP 8.3+).
 - The `sp-jwt` auth guard is registered in `config/auth.php`; tokens are signed with RS256 PEM key pairs.
-- Client-facing docs: `vendor/sopheak/sp-jwt-auth/docs/ai/client-install.md` and `vendor/sopheak/sp-jwt-auth/boot.json`.
+- Client-facing docs: `vendor/sopheak/sp-jwt-auth/docs/client-install.md` and `vendor/sopheak/sp-jwt-auth/boot.json`.
 
 ## Setup and verification
 

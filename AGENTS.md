@@ -11,7 +11,7 @@
 - `src/` has real code (Console, Contracts, DTO, Events, Guards, Http, Models, Security, Services, Signing, Support, Testing, Traits)
 - `tests/` has Unit + Feature tests + TestCase base class; `tests/Fixtures/keys/*.pem` are committed test-only keys
 - Active branch is `develop`; `main` is the release branch (CI runs `composer quality` on both, PHP 8.3/8.4)
-- Version is bumped in lockstep across `composer.json` `version`, `VERSION`, and `CHANGELOG.md` (currently 0.1.18, uncommitted work-in-progress)
+- Version is bumped in lockstep across `VERSION` and `CHANGELOG.md` (currently 0.1.20); `composer.json` has no `version` field — Packagist derives it from git tags, and `composer validate --strict` rejects the field
 - `composer.lock` is gitignored — installs float on latest deps (CI runs `composer update`)
 
 ## Commands
@@ -38,6 +38,7 @@ Package Artisan commands: `sp-jwt-auth:install --keys`, `sp-jwt-auth:setup --key
 
 - Never use `APP_KEY` as JWT signing key.
 - Never log tokens, secrets, or private keys.
+- Never put tokens, secrets, or client data in task-progress artifacts (todo items, session summaries, compaction summaries, commit messages) — same rule as logs; `share` is disabled in `opencode.json` for this reason.
 - Hash refresh tokens with HMAC + stored `hash_key_id`; use timing-safe comparisons.
 - Refresh rotation inside a DB transaction (detect reuse).
 - User ownership via `user_type` + `user_id` (polymorphic), not foreign keys.
@@ -46,19 +47,19 @@ Package Artisan commands: `sp-jwt-auth:install --keys`, `sp-jwt-auth:setup --key
 
 ## Instruction Files
 
-These are loaded via `opencode.json` and provide deeper context:
+These live in `.opencode/rules/` (local, gitignored — not shipped with the package) and are loaded via `opencode.json`:
 
-- `docs/ai/coding-standards.md` — security rules, package conventions, testing expectations
-- `docs/ai/architecture.md` — core flow, storage tables, security boundaries
-- `docs/ai/project-context.md` — repo map, implemented scope (v1.0 Core JWT → v2.1 OAuth), non-goals
-- `docs/ai/commands.md` — full command list with examples
+- `.opencode/rules/coding-standards.md` — security rules, package conventions, testing expectations
+- `.opencode/rules/architecture.md` — core flow, storage tables, security boundaries
+- `.opencode/rules/project-context.md` — repo map, implemented scope (v1.0 Core JWT → v2.1 OAuth), non-goals
+- `.opencode/rules/commands.md` — full command list with examples
 
 ## Client-side / Boot
 
 - `boot.json` — machine-readable install/setup/verify steps for Laravel Boot and other agents scaffolding client apps.
 - `guidelines/sp-jwt-auth.md` — Boost auto-detect guidelines for agents working with the package in client apps.
 - `skills/sp-jwt-auth/SKILL.md` — agentskills.io-format skill; installs into client `.agents/skills/` via `sp-jwt-auth:boost`.
-- `docs/ai/client-install.md` — step-by-step client installation guide for agents (publish, configure, migrate, validate, User model trait, optional modules).
+- `docs/client-install.md` — step-by-step client installation guide for agents (publish, configure, migrate, validate, User model trait, optional modules).
 - `sp-jwt-auth:boost` — wires guidelines/skill into the client, registers the Boost skill in `boost.json` and the MCP server in `.mcp.json`.
 - `sp-jwt-auth:mcp` — MCP stdio server (read-only `validate`, `jwks`, `config` tools; secrets never exposed).
 - Optional `first_factor_otp` module — `FirstFactorOtpBroker` + `FirstFactorUserResolver` contract + `routes/otp.php` (config-gated).

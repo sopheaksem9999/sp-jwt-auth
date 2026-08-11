@@ -2,6 +2,14 @@
 
 All notable changes to `sopheak/sp-jwt-auth` will be documented in this file.
 
+## [0.1.20] - 2026-08-11
+
+### Added
+- Per-destination fixed OTP test codes: `first_factor_otp.test_codes` (`SP_JWT_FFOTP_TEST_CODES`), comma-separated `destination:code` pairs matched against the normalized destination. A matching destination uses the fixed code, and delivery (sender + `OtpCodeSent`) is skipped — for both per-destination entries and the global `test_mode`/`test_code`.
+
+### Changed
+- Agent-facing context moved out of the shipped package: the four agent context docs are now local `.opencode/rules/*.md` (gitignored, loaded via `opencode.json`); the client installation guide moved from `docs/ai/client-install.md` to `docs/client-install.md` (references updated in `boot.json`, `guidelines/sp-jwt-auth.md`, `skills/sp-jwt-auth/SKILL.md`, `AGENTS.md`).
+
 ## [0.1.19] - 2026-08-10
 
 ### Added

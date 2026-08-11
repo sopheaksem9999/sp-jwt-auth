@@ -69,6 +69,7 @@ return [
         'requested_types' => [],
         'test_mode' => filter_var(env('SP_JWT_FFOTP_TEST_MODE', false), FILTER_VALIDATE_BOOL),
         'test_code' => env('SP_JWT_FFOTP_TEST_CODE'),
+        'test_codes' => env('SP_JWT_FFOTP_TEST_CODES', ''),
         'limits' => [
             'request_per_destination' => (int) env('SP_JWT_FFOTP_LIMIT_REQUEST_DESTINATION', 5),
             'request_per_ip' => (int) env('SP_JWT_FFOTP_LIMIT_REQUEST_IP', 20),

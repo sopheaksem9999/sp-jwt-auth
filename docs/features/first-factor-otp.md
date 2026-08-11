@@ -32,6 +32,7 @@ SP_JWT_FFOTP_ENABLED=true
 | `first_factor_otp.requested_types` | — | `[]` | Allowed requested account types; empty means all types are allowed. |
 | `first_factor_otp.test_mode` | `SP_JWT_FFOTP_TEST_MODE` | `false` | Accept a fixed test code instead of the generated one. Dev/staging only. |
 | `first_factor_otp.test_code` | `SP_JWT_FFOTP_TEST_CODE` | `null` | The fixed code accepted when `test_mode` is enabled. |
+| `first_factor_otp.test_codes` | `SP_JWT_FFOTP_TEST_CODES` | `''` | Comma-separated `destination:code` pairs (e.g. `dev@mail.com:009988,+85511002233:123456`); a matching destination uses that fixed code. Matching is against the normalized destination (email lowercased, phone without whitespace). |
 | `first_factor_otp.limits.request_per_destination` | `SP_JWT_FFOTP_LIMIT_REQUEST_DESTINATION` | `5` | Request/resend limit per destination within the decay window. |
 | `first_factor_otp.limits.request_per_ip` | `SP_JWT_FFOTP_LIMIT_REQUEST_IP` | `20` | Request/resend limit per IP within the decay window. |
 | `first_factor_otp.limits.verify_per_ip` | `SP_JWT_FFOTP_LIMIT_VERIFY_IP` | `30` | Verify limit per IP within the decay window. |
@@ -148,7 +149,7 @@ The plaintext code is never returned by an endpoint. `request` and `resend` shar
 - Codes and destinations are stored only as HMAC hashes via `SecretHasher`; destinations are masked.
 - Requesting a new code invalidates prior pending challenges for the same destination.
 - Verification is atomic and single-use: a database transaction with a row lock rejects expired or already verified codes, increments the attempt counter on wrong codes, and locks the code after `max_attempts`.
-- `test_mode` accepts a fixed code — enable it only in dev/staging, never in production.
+- `test_mode`/`test_code` and `test_codes` accept fixed codes — enable them only in dev/staging, never in production. Delivery (sender + `OtpCodeSent`) is skipped for fixed codes, including per-destination matches.
 
 ## Events
 

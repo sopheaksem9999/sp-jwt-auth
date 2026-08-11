@@ -53,7 +53,15 @@ final readonly class FirstFactorOtpBroker
 
         $this->invalidatePrior($destination, $purpose);
 
-        $plaintext = $this->generateCode((int) config('sp-jwt-auth.first_factor_otp.digits', 6));
+        $testCode = $this->testCodeFor($destination);
+
+        if ($testCode === null) {
+            $testCode = config('sp-jwt-auth.first_factor_otp.test_mode')
+                ? config('sp-jwt-auth.first_factor_otp.test_code')
+                : null;
+        }
+
+        $plaintext = is_string($testCode) && $testCode !== '' ? $testCode : $this->generateCode((int) config('sp-jwt-auth.first_factor_otp.digits', 6));
         $hash = $this->hasher->hash($plaintext);
         $destinationHash = $this->hasher->hash($destination->normalizedDestination);
 
@@ -73,7 +81,7 @@ final readonly class FirstFactorOtpBroker
 
         $dispatch = new OtpDispatch($otp->id, $otp->id, $plaintext, $destination, $otp);
 
-        if (app()->bound(OtpChannelSender::class)) {
+        if (app()->bound(OtpChannelSender::class) && $testCode === null) {
             app(OtpChannelSender::class)->send($dispatch);
             Event::dispatch(new OtpCodeSent($dispatch));
         }
@@ -264,16 +272,33 @@ final readonly class FirstFactorOtpBroker
         }
     }
 
-    private function generateCode(int $digits): string
+    private function testCodeFor(OtpDestination $destination): ?string
     {
-        $testCode = config('sp-jwt-auth.first_factor_otp.test_mode')
-            ? config('sp-jwt-auth.first_factor_otp.test_code')
-            : null;
+        $raw = config('sp-jwt-auth.first_factor_otp.test_codes', '');
 
-        if (is_string($testCode) && $testCode !== '') {
-            return $testCode;
+        if (! is_string($raw) || $raw === '') {
+            return null;
         }
 
+        foreach (explode(',', $raw) as $pair) {
+            $parts = explode(':', $pair, 2);
+
+            if (count($parts) !== 2) {
+                continue;
+            }
+
+            [$dest, $code] = [trim($parts[0]), trim($parts[1])];
+
+            if (hash_equals($dest, $destination->normalizedDestination)) {
+                return $code;
+            }
+        }
+
+        return null;
+    }
+
+    private function generateCode(int $digits): string
+    {
         $min = 10 ** max(1, $digits - 1);
         $max = (10 ** $digits) - 1;
 

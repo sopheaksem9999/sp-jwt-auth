@@ -12,7 +12,7 @@ First-party JWT access and rotating refresh token authentication for Laravel app
 
 ## Documentation
 
-- Client installation guide: `vendor/sopheak/sp-jwt-auth/docs/ai/client-install.md`
+- Client installation guide: `vendor/sopheak/sp-jwt-auth/docs/client-install.md`
 - Agent manifest: `vendor/sopheak/sp-jwt-auth/boot.json`
 - Agent guidelines: `vendor/sopheak/sp-jwt-auth/guidelines/sp-jwt-auth.md`
 - Full docs: `vendor/sopheak/sp-jwt-auth/docs/` (or the published docs site referenced in the package README)

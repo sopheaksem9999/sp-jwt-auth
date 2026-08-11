@@ -8,8 +8,13 @@ use Closure;
 use InvalidArgumentException;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Contracts\Auth\Authenticatable;
+use Illuminate\Support\Facades\Event;
 use Sopheak\JwtAuth\Contracts\FirstFactorUserResolver;
+use Sopheak\JwtAuth\Contracts\OtpChannelSender;
 use Sopheak\JwtAuth\DTO\OtpDestination;
+use Sopheak\JwtAuth\DTO\OtpDispatch;
+use Sopheak\JwtAuth\Events\OtpCodeCreated;
+use Sopheak\JwtAuth\Events\OtpCodeSent;
 use Sopheak\JwtAuth\Models\FirstFactorOtpCode;
 use Sopheak\JwtAuth\Services\FirstFactorOtpBroker;
 use Sopheak\JwtAuth\Tests\Fixtures\User;
@@ -313,5 +318,119 @@ final class FirstFactorOtpBrokerTest extends TestCase
         $this->expectException(InvalidArgumentException::class);
 
         $this->broker()->resendByDestination(OtpDestination::email('a@b.com'), 'register');
+    }
+
+    public function test_request_uses_per_destination_test_code(): void
+    {
+        config()->set('sp-jwt-auth.first_factor_otp.test_codes', 'dev@mail.com:009988');
+
+        $dispatch = $this->broker()->request(OtpDestination::email('dev@mail.com'), 'login');
+
+        $this->assertSame('009988', $dispatch->plaintextCode);
+    }
+
+    public function test_request_ignores_test_code_for_other_destination(): void
+    {
+        config()->set('sp-jwt-auth.first_factor_otp.test_codes', 'dev@mail.com:009988');
+
+        $dispatch = $this->broker()->request(OtpDestination::email('other@mail.com'), 'login');
+
+        $this->assertNotSame('009988', $dispatch->plaintextCode);
+        $this->assertSame(6, strlen($dispatch->plaintextCode));
+    }
+
+    public function test_test_codes_support_phone_and_multiple_entries(): void
+    {
+        config()->set('sp-jwt-auth.first_factor_otp.test_codes', '+85511002233:123456,dev@mail.com:009988');
+
+        $dispatch = $this->broker()->request(OtpDestination::phone('+85511002233'), 'login');
+
+        $this->assertSame('123456', $dispatch->plaintextCode);
+    }
+
+    public function test_request_skips_malformed_test_code_pairs(): void
+    {
+        config()->set('sp-jwt-auth.first_factor_otp.test_codes', 'dev@mail.com');
+
+        $dispatch = $this->broker()->request(OtpDestination::email('dev@mail.com'), 'login');
+
+        $this->assertSame(6, strlen($dispatch->plaintextCode));
+    }
+
+    public function test_request_with_test_code_skips_sender(): void
+    {
+        config()->set('sp-jwt-auth.first_factor_otp.test_codes', 'dev@mail.com:009988');
+
+        Event::fake([OtpCodeCreated::class, OtpCodeSent::class]);
+
+        $sender = new class implements OtpChannelSender {
+            public int $sent = 0;
+
+            public function send(OtpDispatch $dispatch): void
+            {
+                $this->sent++;
+            }
+        };
+
+        $this->app->instance(OtpChannelSender::class, $sender);
+
+        $this->broker()->request(OtpDestination::email('dev@mail.com'), 'login');
+
+        $this->assertSame(0, $sender->sent);
+        Event::assertDispatched(OtpCodeCreated::class);
+        Event::assertNotDispatched(OtpCodeSent::class);
+    }
+
+    public function test_request_without_test_code_calls_sender(): void
+    {
+        $sender = new class implements OtpChannelSender {
+            public int $sent = 0;
+
+            public function send(OtpDispatch $dispatch): void
+            {
+                $this->sent++;
+            }
+        };
+
+        $this->app->instance(OtpChannelSender::class, $sender);
+
+        $this->broker()->request(OtpDestination::email('a@b.com'), 'login');
+
+        $this->assertSame(1, $sender->sent);
+    }
+
+    public function test_global_test_mode_skips_sender(): void
+    {
+        config()->set('sp-jwt-auth.first_factor_otp.test_mode', true);
+        config()->set('sp-jwt-auth.first_factor_otp.test_code', '424242');
+
+        $sender = new class implements OtpChannelSender {
+            public int $sent = 0;
+
+            public function send(OtpDispatch $dispatch): void
+            {
+                $this->sent++;
+            }
+        };
+
+        $this->app->instance(OtpChannelSender::class, $sender);
+
+        $this->broker()->request(OtpDestination::email('a@b.com'), 'login');
+
+        $this->assertSame(0, $sender->sent);
+    }
+
+    public function test_verify_with_per_destination_test_code_issues_token_pair(): void
+    {
+        $this->bindResolver(existing: $this->createUser());
+
+        config()->set('sp-jwt-auth.first_factor_otp.test_codes', 'dev@mail.com:009988');
+
+        $dispatch = $this->broker()->request(OtpDestination::email('dev@mail.com'), 'login');
+
+        $verification = $this->broker()->verify($dispatch->otpId, '009988');
+
+        $this->assertNotEmpty($verification->pair->accessToken);
+        $this->assertNotNull(FirstFactorOtpCode::query()->findOrFail($dispatch->otpId)->verified_at);
     }
 }
