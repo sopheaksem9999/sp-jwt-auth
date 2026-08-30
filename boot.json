@@ -48,8 +48,6 @@
     ],
     "docs": [
         "AGENTS.md",
-        "docs/client-install.md",
-        "guidelines/sp-jwt-auth.md",
-        "skills/sp-jwt-auth/SKILL.md"
+        "docs/client-install.md"
     ]
 }

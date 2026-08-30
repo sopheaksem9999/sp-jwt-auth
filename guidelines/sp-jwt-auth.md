@@ -14,7 +14,7 @@ Guidelines for agents working with applications that use `sopheak/sp-jwt-auth`.
 - Configure: `php artisan sp-jwt-auth:setup --keys` (publishes config + migrations, patches `config/auth.php`, generates keys, sets `SP_JWT_REFRESH_HASH_KEY`).
 - Migrate: `php artisan migrate`.
 - Verify: `php artisan sp-jwt-auth:validate --json` — exit 0 with `{"status":"ok"}` when configured; use `--fix` for safe repairs.
-- Wire AI tooling: `php artisan sp-jwt-auth:boost` (installs guidelines + skill, registers the skill in `boost.json` and the MCP server in `.mcp.json`), then `php artisan boost:install`.
+- Wire AI tooling: `php artisan sp-jwt-auth:boost` (merges the MCP server into `.mcp.json` and validates setup), then `php artisan sp-jwt-auth:agent` (installs the agent skill into `.agents/skills/` and rules into `.agents/rules/`). Nothing is auto-added to the client on package install.
 
 ## User model
 

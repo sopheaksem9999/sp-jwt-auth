@@ -11,7 +11,7 @@
 - `src/` has real code (Console, Contracts, DTO, Events, Guards, Http, Models, Security, Services, Signing, Support, Testing, Traits)
 - `tests/` has Unit + Feature tests + TestCase base class; `tests/Fixtures/keys/*.pem` are committed test-only keys
 - Active branch is `develop`; `main` is the release branch (CI runs `composer quality` on both, PHP 8.3/8.4)
-- Version is bumped in lockstep across `VERSION` and `CHANGELOG.md` (currently 0.1.20); `composer.json` has no `version` field — Packagist derives it from git tags, and `composer validate --strict` rejects the field
+- Version is bumped in lockstep across `VERSION` and `CHANGELOG.md` (currently 0.1.21); `composer.json` has no `version` field — Packagist derives it from git tags, and `composer validate --strict` rejects the field
 - `composer.lock` is gitignored — installs float on latest deps (CI runs `composer update`)
 
 ## Commands
@@ -25,7 +25,7 @@
 | Quality gate | `composer quality` | format-check → analyse → test (that order) |
 | PHP-CS-Fixer | `./vendor/bin/php-cs-fixer fix --dry-run --diff` | Config: `@auto` rules; not part of the quality gate |
 
-Package Artisan commands: `sp-jwt-auth:install --keys`, `sp-jwt-auth:setup --keys`, `sp-jwt-auth:keys`, `sp-jwt-auth:jwks`, `sp-jwt-auth:prune`, `sp-jwt-auth:validate [--fix] [--json]`, `sp-jwt-auth:boost [--force]`, `sp-jwt-auth:mcp`.
+Package Artisan commands: `sp-jwt-auth:install --keys`, `sp-jwt-auth:setup --keys`, `sp-jwt-auth:keys`, `sp-jwt-auth:jwks`, `sp-jwt-auth:prune`, `sp-jwt-auth:validate [--fix] [--json]`, `sp-jwt-auth:boost`, `sp-jwt-auth:agent [--force|--skill|--rules|--mcp]`, `sp-jwt-auth:mcp`.
 
 ## Testing
 
@@ -56,11 +56,12 @@ These live in `.opencode/rules/` (local, gitignored — not shipped with the pac
 
 ## Client-side / Boot
 
-- `boot.json` — machine-readable install/setup/verify steps for Laravel Boot and other agents scaffolding client apps.
-- `guidelines/sp-jwt-auth.md` — Boost auto-detect guidelines for agents working with the package in client apps.
-- `skills/sp-jwt-auth/SKILL.md` — agentskills.io-format skill; installs into client `.agents/skills/` via `sp-jwt-auth:boost`.
+- `boot.json` — machine-readable install/setup/verify steps for Laravel Boot and other agents scaffolding client apps. No skill/agent assets are auto-added on install.
+- `guidelines/sp-jwt-auth.md` — agent guidelines; installs into client `.agents/rules/` via `sp-jwt-auth:agent`.
+- `skills/sp-jwt-auth/SKILL.md` — agentskills.io-format skill; installs into client `.agents/skills/` via `sp-jwt-auth:agent`.
 - `docs/client-install.md` — step-by-step client installation guide for agents (publish, configure, migrate, validate, User model trait, optional modules).
-- `sp-jwt-auth:boost` — wires guidelines/skill into the client, registers the Boost skill in `boost.json` and the MCP server in `.mcp.json`.
+- `sp-jwt-auth:boost` — merges the MCP server into the client's `.mcp.json` and runs setup validation (Laravel Boost integration).
+- `sp-jwt-auth:agent` — on-demand install of the agent skill, rules, and MCP entry into the client (`.agents/skills/`, `.agents/rules/`, `.mcp.json`).
 - `sp-jwt-auth:mcp` — MCP stdio server (read-only `validate`, `jwks`, `config` tools; secrets never exposed).
 - Optional `first_factor_otp` module — `FirstFactorOtpBroker` + `FirstFactorUserResolver` contract + `routes/otp.php` (config-gated).
 - Optional `token_endpoints` module — `routes/token.php` (`POST /auth/token/refresh`, `POST /auth/token/revoke`, config-gated).
