@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sopheak\JwtAuth\Tests\Feature;
 
 use Illuminate\Contracts\Auth\Authenticatable;
+use RuntimeException;
 use Illuminate\Support\Facades\Event;
 use Sopheak\JwtAuth\Contracts\FirstFactorUserResolver;
 use Sopheak\JwtAuth\Contracts\OtpChannelSender;
@@ -179,6 +180,71 @@ final class OtpDeliveryResultTest extends TestCase
 
         self::assertNotNull(FirstFactorOtpCode::query()->find($dispatch->otpId));
         self::assertSame(1, FirstFactorOtpCode::query()->count());
+    }
+
+    // ---- Repro of client bug report (0.1.23-beta.46) ---------------------
+    // A sender that THROWS (rather than returning a failure result) must not
+    // leave an orphaned row behind, on either contract.
+
+    public function test_legacy_sender_that_throws_leaves_no_orphaned_row(): void
+    {
+        $this->app->instance(OtpChannelSender::class, new class implements OtpChannelSender {
+            public function send(OtpDispatch $dispatch): void
+            {
+                throw new RuntimeException('gateway down');
+            }
+        });
+
+        try {
+            $this->broker()->request(OtpDestination::phone('+85512345678'), 'login');
+            self::fail('Expected the sender exception to propagate.');
+        } catch (RuntimeException $runtimeException) {
+            self::assertSame('gateway down', $runtimeException->getMessage());
+        }
+
+        self::assertSame(0, FirstFactorOtpCode::query()->count(), 'A failed send must not persist a challenge.');
+    }
+
+    public function test_legacy_sender_that_throws_does_not_arm_the_resend_cooldown(): void
+    {
+        $this->app->instance(OtpChannelSender::class, new class implements OtpChannelSender {
+            public function send(OtpDispatch $dispatch): void
+            {
+                throw new RuntimeException('gateway down');
+            }
+        });
+
+        try {
+            $this->broker()->request(OtpDestination::phone('+85512345678'), 'login');
+        } catch (RuntimeException) {
+            // expected
+        }
+
+        // Gateway recovers. The immediate retry must not hit the 60s cooldown.
+        $this->app->instance(OtpChannelSender::class, $this->legacySender());
+
+        $dispatch = $this->broker()->request(OtpDestination::phone('+85512345678'), 'login');
+
+        self::assertNotNull(FirstFactorOtpCode::query()->find($dispatch->otpId));
+    }
+
+    public function test_result_aware_sender_that_throws_leaves_no_orphaned_row(): void
+    {
+        $this->app->instance(OtpDeliveryAwareSender::class, new class implements OtpDeliveryAwareSender {
+            public function deliver(OtpDispatch $dispatch): OtpDeliveryResult
+            {
+                throw new RuntimeException('connection reset');
+            }
+        });
+
+        try {
+            $this->broker()->request(OtpDestination::phone('+85599990000'), 'login');
+            self::fail('Expected the sender exception to propagate.');
+        } catch (RuntimeException $runtimeException) {
+            self::assertSame('connection reset', $runtimeException->getMessage());
+        }
+
+        self::assertSame(0, FirstFactorOtpCode::query()->count(), 'A throwing deliver() must not persist a challenge.');
     }
 
     // ---- Case 5: dual-interface class bound only to the old key ----------
