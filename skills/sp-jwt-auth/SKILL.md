@@ -1,6 +1,6 @@
 ---
 name: sp-jwt-auth
-description: 'ACTIVATE when the user works on authentication in a Laravel app using sopheak/sp-jwt-auth. Includes JWT access tokens, rotating refresh tokens, bearer token auth, the sp-jwt guard, token issuance or validation, token scope checks, API keys, JWKS, key generation/rotation, or setup/validation of the sp-jwt-auth package (sp-jwt-auth:setup, sp-jwt-auth:validate, sp-jwt-auth:keys, sp-jwt-auth:jwks, sp-jwt-auth:boost). Also activate when the user mentions sp-jwt, JWT auth, bearer tokens, refresh token rotation, HasJwtTokens, SP_JWT_REFRESH_HASH_KEY, or config/sp-jwt-auth.php. Do NOT activate for Laravel Fortify (session auth), Passport (OAuth2 tokens), Sanctum (personal access tokens), or Socialite (OAuth social login).'
+description: 'ACTIVATE when the user works on authentication in a Laravel app using sopheak/sp-jwt-auth. Includes JWT access tokens, rotating refresh tokens, bearer token auth, the sp-jwt guard, token issuance or validation, token scope checks, API keys, JWKS, key generation/rotation, or setup/validation of the sp-jwt-auth package (sp-jwt-auth:setup, sp-jwt-auth:validate, sp-jwt-auth:keys, sp-jwt-auth:jwks, sp-jwt-auth:boost, sp-jwt-auth:agent). Also activate when the user mentions sp-jwt, JWT auth, bearer tokens, refresh token rotation, HasJwtTokens, SP_JWT_REFRESH_HASH_KEY, or config/sp-jwt-auth.php. Do NOT activate for Laravel Fortify (session auth), Passport (OAuth2 tokens), Sanctum (personal access tokens), or Socialite (OAuth social login).'
 license: MIT
 metadata:
   author: sopheak
@@ -56,8 +56,8 @@ First-party JWT access and rotating refresh token authentication for Laravel app
 ### Wire AI tooling (Laravel Boost)
 
 ```
-- [ ] php artisan sp-jwt-auth:boost  (installs guidelines + skill, registers boost.json skill and .mcp.json MCP server)
-- [ ] php artisan boost:install  (regenerates agent guidelines)
+- [ ] php artisan sp-jwt-auth:boost  (merges the sp-jwt-auth MCP server into .mcp.json + validates setup)
+- [ ] php artisan sp-jwt-auth:agent  (installs the agent skill into .agents/skills/ and rules into .agents/rules/)
 - [ ] Use the sp-jwt-auth MCP tools: validate, jwks, config
 ```
 
@@ -77,7 +77,8 @@ First-party JWT access and rotating refresh token authentication for Laravel app
 | `php artisan sp-jwt-auth:keys --generate [--pem]` | Generate/rotate signing keys |
 | `php artisan sp-jwt-auth:jwks [--pretty]` | Print public JWKS |
 | `php artisan sp-jwt-auth:prune` | Prune expired/revoked tokens |
-| `php artisan sp-jwt-auth:boost` | Install Boost guidelines/skill + MCP registration |
+| `php artisan sp-jwt-auth:boost` | Merge sp-jwt-auth MCP server into .mcp.json + validate |
+| `php artisan sp-jwt-auth:agent` | Install agent skill/rules/MCP on demand |
 | `php artisan sp-jwt-auth:mcp` | MCP stdio server (validate/jwks/config tools) |
 
 ## Security rules

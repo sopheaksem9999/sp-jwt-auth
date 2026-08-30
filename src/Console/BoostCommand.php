@@ -9,147 +9,82 @@ use JsonException;
 
 final class BoostCommand extends Command
 {
-    protected $signature = 'sp-jwt-auth:boost
-        {--force : Overwrite existing guidelines and skills files}';
+    protected $signature = 'sp-jwt-auth:boost';
 
-    protected $description = 'Wire sp-jwt-auth into the client app for Laravel Boost agents.';
+    protected $description = 'Merge the sp-jwt-auth MCP server into .mcp.json and validate the setup';
+
+    private const array MCP_SERVER_ENTRY = [
+        'type' => 'stdio',
+        'command' => 'php',
+        'args' => ['artisan', 'sp-jwt-auth:mcp'],
+    ];
 
     public function handle(): int
     {
-        $this->installGuidelines();
-        $this->installSkill();
-        $this->registerBoostSkill();
-        $this->registerMcpServer();
+        $this->info('Merging the [sp-jwt-auth] MCP server into .mcp.json...');
+        $merged = $this->mergeMcpConfig();
 
-        $this->info('Run php artisan boost:install to regenerate agent guidelines for this app.');
+        if (! $merged) {
+            $this->error('Could not update .mcp.json (unparseable JSON or write failure).');
+            $this->line('Fix .mcp.json manually, then re-run this command.');
+
+            return self::FAILURE;
+        }
+
+        $this->info('Running setup validation...');
+        $this->newLine();
+        $this->call('sp-jwt-auth:validate');
+        $this->newLine();
+
+        $this->line('Next steps:');
+        $this->line('  • Run `php artisan sp-jwt-auth:agent` to install the agent skill and rules.');
+        $this->line('  • If you use Laravel Boost, re-run `php artisan sp-jwt-auth:boost` if Boost regenerates .mcp.json.');
 
         return self::SUCCESS;
     }
 
-    private function installGuidelines(): void
-    {
-        $this->copyPackageFile(
-            __DIR__ . '/../../guidelines/sp-jwt-auth.md',
-            base_path('guidelines/sp-jwt-auth.md'),
-            'guidelines/sp-jwt-auth.md',
-        );
-    }
-
-    private function installSkill(): void
-    {
-        $this->copyPackageFile(
-            __DIR__ . '/../../skills/sp-jwt-auth/SKILL.md',
-            base_path('.agents/skills/sp-jwt-auth/SKILL.md'),
-            '.agents/skills/sp-jwt-auth/SKILL.md',
-        );
-    }
-
-    private function copyPackageFile(string $source, string $target, string $label): void
-    {
-        if (file_exists($target) && ! $this->option('force')) {
-            $this->line(sprintf('Skipped %s (already exists; use --force to overwrite).', $label));
-
-            return;
-        }
-
-        $contents = file_get_contents($source);
-
-        if ($contents === false) {
-            $this->warn(sprintf('Unable to read packaged %s.', $label));
-
-            return;
-        }
-
-        if (! is_dir(dirname($target))) {
-            mkdir(dirname($target), 0777, true);
-        }
-
-        file_put_contents($target, $contents);
-        $this->info(sprintf('Installed %s.', $label));
-    }
-
-    private function registerBoostSkill(): void
-    {
-        $path = base_path('boost.json');
-
-        if (! file_exists($path)) {
-            $this->line('Skipped boost.json (not found; create one to enable the sp-jwt-auth skill).');
-
-            return;
-        }
-
-        $boost = $this->readJson($path);
-
-        if ($boost === null) {
-            $this->warn('Skipped boost.json (invalid JSON).');
-
-            return;
-        }
-
-        $skills = $boost['skills'] ?? [];
-
-        if (! is_array($skills)) {
-            $this->warn('Skipped boost.json (skills must be an array).');
-
-            return;
-        }
-
-        if (in_array('sp-jwt-auth', $skills, true)) {
-            $this->line('boost.json already registers the sp-jwt-auth skill.');
-
-            return;
-        }
-
-        $skills[] = 'sp-jwt-auth';
-        $boost['skills'] = array_values($skills);
-
-        $this->writeJson($path, $boost);
-        $this->info('Registered the sp-jwt-auth skill in boost.json.');
-    }
-
-    private function registerMcpServer(): void
+    /**
+     * Read-modify-write merge of the sp-jwt-auth entry into .mcp.json,
+     * preserving every other server (laravel-boost included). Creates the
+     * file when missing. Idempotent: untouched when the entry already matches.
+     */
+    private function mergeMcpConfig(): bool
     {
         $path = base_path('.mcp.json');
-        $server = [
-            'type' => 'stdio',
-            'command' => 'php',
-            'args' => ['artisan', 'sp-jwt-auth:mcp'],
-        ];
 
-        if (! file_exists($path)) {
-            $this->writeJson($path, ['mcpServers' => ['sp-jwt-auth' => $server]]);
-            $this->info('Created .mcp.json with the sp-jwt-auth MCP server.');
+        $config = ['mcpServers' => []];
 
-            return;
+        if (file_exists($path)) {
+            $decoded = $this->readJson($path);
+
+            if ($decoded === null) {
+                return false;
+            }
+
+            $config = $decoded;
+
+            if (! isset($config['mcpServers']) || ! is_array($config['mcpServers'])) {
+                $config['mcpServers'] = [];
+            }
         }
 
-        $mcp = $this->readJson($path);
+        $existing = $config['mcpServers']['sp-jwt-auth'] ?? null;
 
-        if ($mcp === null) {
-            $this->warn('Skipped .mcp.json (invalid JSON).');
+        if ($existing === self::MCP_SERVER_ENTRY) {
+            $this->line('  → [sp-jwt-auth] entry already present and up to date.');
 
-            return;
+            return true;
         }
 
-        $servers = $mcp['mcpServers'] ?? [];
+        $config['mcpServers']['sp-jwt-auth'] = self::MCP_SERVER_ENTRY;
 
-        if (! is_array($servers)) {
-            $this->warn('Skipped .mcp.json (mcpServers must be an object).');
-
-            return;
+        if (! $this->writeJson($path, $config)) {
+            return false;
         }
 
-        if (isset($servers['sp-jwt-auth'])) {
-            $this->line('.mcp.json already registers the sp-jwt-auth MCP server.');
+        $this->line('  → Added the [sp-jwt-auth] MCP server to .mcp.json (existing servers preserved).');
 
-            return;
-        }
-
-        $servers['sp-jwt-auth'] = $server;
-        $mcp['mcpServers'] = $servers;
-
-        $this->writeJson($path, $mcp);
-        $this->info('Registered the sp-jwt-auth MCP server in .mcp.json.');
+        return true;
     }
 
     /**
@@ -175,8 +110,14 @@ final class BoostCommand extends Command
     /**
      * @param array<string, mixed> $data
      */
-    private function writeJson(string $path, array $data): void
+    private function writeJson(string $path, array $data): bool
     {
-        file_put_contents($path, json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . PHP_EOL);
+        try {
+            $encoded = json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
+        } catch (JsonException) {
+            return false;
+        }
+
+        return file_put_contents($path, $encoded . PHP_EOL) !== false;
     }
 }

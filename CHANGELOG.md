@@ -2,6 +2,13 @@
 
 All notable changes to `sopheak/sp-jwt-auth` will be documented in this file.
 
+## [0.1.21] - 2026-08-19
+
+### Changed
+- `sp-jwt-auth:boost` no longer installs skills/guidelines or edits `boost.json` — it now only merges the `sp-jwt-auth` MCP server into the client's `.mcp.json` and runs setup validation.
+- New `sp-jwt-auth:agent` command (alias `sp-jwt-auth:agent-init`) installs the agent skill (`.agents/skills/sp-jwt-auth/SKILL.md`) and rules (`.agents/rules/sp-jwt-auth.md`) on demand, with `--force`, `--skill`, `--rules`, `--mcp`, and `--all` flags.
+- Auto-add of skill/agent assets on package install removed: `boot.json` no longer lists `guidelines/sp-jwt-auth.md` or `skills/sp-jwt-auth/SKILL.md` in its `docs` array, so agentic installers no longer pull skill/agent files into client apps.
+
 ## [0.1.20] - 2026-08-11
 
 ### Added

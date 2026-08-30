@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
+use Sopheak\JwtAuth\Console\AgentCommand;
 use Sopheak\JwtAuth\Console\BoostCommand;
 use Sopheak\JwtAuth\Console\InstallCommand;
 use Sopheak\JwtAuth\Console\JwksCommand;
@@ -102,11 +103,15 @@ final class CoreSpJwtAuthServiceProvider extends ServiceProvider
             /** @var Request $request */
             $request = $app->make('request');
 
-            return new JwtGuard(
+            $guard = new JwtGuard(
                 $app->make(JwtTokenService::class),
                 $auth->createUserProvider($providerName),
                 $request,
             );
+
+            $guard->setRequest($app->refresh('request', $guard, 'setRequest'));
+
+            return $guard;
         });
 
         /** @var Router $router */
@@ -146,6 +151,7 @@ final class CoreSpJwtAuthServiceProvider extends ServiceProvider
                 JwksCommand::class,
                 PruneCommand::class,
                 BoostCommand::class,
+                AgentCommand::class,
                 McpCommand::class,
             ]);
         }
