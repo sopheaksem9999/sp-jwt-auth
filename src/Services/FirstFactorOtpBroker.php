@@ -56,11 +56,9 @@ final readonly class FirstFactorOtpBroker
 
         $testCode = $this->testCodeFor($destination);
 
-        if ($testCode === null) {
-            $testCode = config('sp-jwt-auth.first_factor_otp.test_mode')
-                ? config('sp-jwt-auth.first_factor_otp.test_code')
-                : null;
-        }
+        $testCode ??= config('sp-jwt-auth.first_factor_otp.test_mode')
+            ? config('sp-jwt-auth.first_factor_otp.test_code')
+            : null;
 
         $plaintext = is_string($testCode) && $testCode !== '' ? $testCode : $this->generateCode((int) config('sp-jwt-auth.first_factor_otp.digits', 6));
         $hash = $this->hasher->hash($plaintext);
