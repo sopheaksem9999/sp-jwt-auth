@@ -18,7 +18,7 @@ trait ResolvesOtpSender
     /**
      * Deliver a code through whichever sender contract the application bound.
      *
-     * Does nothing when no sender is bound, preserving the pre-0.1.22 behaviour
+     * Does nothing when no sender is bound, preserving the pre-0.1.23 behaviour
      * of sending nothing and dispatching no delivery events.
      *
      * @param  Closure():void  $rollback  Undoes the persisted challenge when a

@@ -2,7 +2,7 @@
 
 All notable changes to `sopheak/sp-jwt-auth` will be documented in this file.
 
-## [0.1.22] - 2026-08-30
+## [0.1.23] - 2026-08-30
 
 ### Added
 - `OtpDeliveryAwareSender` contract — a result-aware counterpart to `OtpChannelSender` whose `deliver()` returns an `OtpDeliveryResult` carrying `successful`, `providerReference`, and `failureReason`. A sender may implement both; the brokers prefer `deliver()`.
