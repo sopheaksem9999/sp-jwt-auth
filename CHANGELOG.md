@@ -12,7 +12,8 @@ All notable changes to `sopheak/sp-jwt-auth` will be documented in this file.
 - `OtpCodeSent` now carries an optional `$delivery` result — `null` for legacy `void` senders, whose delivery outcome is unknowable.
 
 ### Fixed
-- A failed OTP delivery no longer leaves an orphaned challenge row or an armed resend cooldown. `FirstFactorOtpBroker::request()` and `OtpChallengeBroker::createOtp()` now delete the code they just created when a result-aware sender reports failure, so the client may retry immediately and no `OtpCodeCreated`/`OtpCodeSent` event fires for an undelivered code. The parent `MfaChallenge` is left intact.
+- A failed OTP delivery no longer leaves an orphaned challenge row or an armed resend cooldown. `FirstFactorOtpBroker::request()` and `OtpChallengeBroker::createOtp()` now delete the code they just created, so the client may retry immediately and no `OtpCodeCreated`/`OtpCodeSent` event fires for an undelivered code. The parent `MfaChallenge` is left intact.
+- The rollback covers senders that **throw** as well as those that report failure, on both the legacy `OtpChannelSender` and `OtpDeliveryAwareSender` contracts. Previously only an explicitly-returned `OtpDeliveryResult::failure()` triggered it, so a raising sender — the only failure mode a legacy `void` sender has — still stranded a row and locked the destination out for `resend_cooldown_seconds`. Reported against `0.1.23-beta.46`. The original exception propagates unchanged; `OtpDeliveryFailed` is dispatched with the exception's class name as `failureReason`.
 
 ### Compatibility
 - Fully additive. `OtpChannelSender` is unchanged and existing implementations keep working with no code edit. No config keys added or changed, no migrations, no route changes.

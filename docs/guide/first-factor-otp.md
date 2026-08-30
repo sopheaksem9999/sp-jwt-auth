@@ -161,12 +161,14 @@ Binding is unchanged: a class implementing both contracts still binds to `OtpCha
 
 When `deliver()` returns a failure the broker **deletes the challenge it just created**, dispatches `OtpDeliveryFailed`, and throws `OtpDeliveryFailedException` — which renders as HTTP **502** with `{"message": "<failureReason>"}`. No challenge is issued for an undelivered code, and because the row is gone the resend cooldown is not armed, so the client may retry immediately.
 
+The same rollback applies when a sender **throws** instead of reporting a failure — on either contract, including a legacy `OtpChannelSender` whose `send()` raises. The original exception propagates unchanged; the broker only ensures no challenge survives it. This matters because a surviving row would stamp `last_sent_at` and lock the destination out for the full `resend_cooldown_seconds` over an SMS that never left.
+
 `providerReference` is not included in the response body. Read it from the events instead:
 
 | Event | When | Carries |
 |---|---|---|
 | `OtpCodeSent` | Delivery succeeded, or a legacy `void` sender ran | `$delivery` — the `OtpDeliveryResult`, or `null` for a legacy sender (outcome unknown) |
-| `OtpDeliveryFailed` | `deliver()` reported failure | `$result` with `failureReason` and `providerReference` |
+| `OtpDeliveryFailed` | `deliver()` reported failure, **or** either sender threw | `$result` with `failureReason` and `providerReference`. When the sender threw, `failureReason` is the exception's class name — messages are excluded because they routinely carry gateway URLs and credentials, and the exception itself still reaches your handler. |
 | `OtpCodeCreated` | A challenge was issued | Not dispatched when delivery failed |
 
 Existing `OtpChannelSender` implementations keep working unchanged; `$delivery` is `null` for them because a `void` sender cannot confirm delivery.
