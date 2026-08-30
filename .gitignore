@@ -39,3 +39,7 @@ composer.phar
 !tests/Fixtures/keys/*.key
 !tests/Fixtures/keys/*.pem
 .opencode/
+/docs/api-reports/*
+/docs/bug-reports/*
+/docs/feature-requests/*
+/docs/superpowers/*
