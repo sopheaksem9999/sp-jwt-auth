@@ -129,6 +129,48 @@ $this->app->bind(OtpChannelSender::class, SmsOtpSender::class);
 
 The sender receives an `OtpDispatch` with the plaintext code. Only the HMAC hash of the code is stored.
 
+### Report Delivery Outcome (optional)
+
+`OtpChannelSender::send()` returns `void`, so a gateway failure cannot stop the broker from issuing a challenge for a code that was never sent. Implement `OtpDeliveryAwareSender` instead — or in addition — to report the outcome:
+
+```php
+use Sopheak\JwtAuth\Contracts\OtpChannelSender;
+use Sopheak\JwtAuth\Contracts\OtpDeliveryAwareSender;
+use Sopheak\JwtAuth\DTO\OtpDeliveryResult;
+use Sopheak\JwtAuth\DTO\OtpDispatch;
+
+final class SmsOtpSender implements OtpChannelSender, OtpDeliveryAwareSender
+{
+    public function deliver(OtpDispatch $dispatch): OtpDeliveryResult
+    {
+        $response = $this->gateway->send(/* ... */);
+
+        return $response->ok()
+            ? OtpDeliveryResult::success($response->json('request_id'))
+            : OtpDeliveryResult::failure('http_' . $response->status());
+    }
+
+    public function send(OtpDispatch $dispatch): void
+    {
+        $this->deliver($dispatch);
+    }
+}
+```
+
+Binding is unchanged: a class implementing both contracts still binds to `OtpChannelSender::class`, and the broker prefers `deliver()`. Binding `OtpDeliveryAwareSender::class` explicitly also works and takes precedence.
+
+When `deliver()` returns a failure the broker **deletes the challenge it just created**, dispatches `OtpDeliveryFailed`, and throws `OtpDeliveryFailedException` — which renders as HTTP **502** with `{"message": "<failureReason>"}`. No challenge is issued for an undelivered code, and because the row is gone the resend cooldown is not armed, so the client may retry immediately.
+
+`providerReference` is not included in the response body. Read it from the events instead:
+
+| Event | When | Carries |
+|---|---|---|
+| `OtpCodeSent` | Delivery succeeded, or a legacy `void` sender ran | `$delivery` — the `OtpDeliveryResult`, or `null` for a legacy sender (outcome unknown) |
+| `OtpDeliveryFailed` | `deliver()` reported failure | `$result` with `failureReason` and `providerReference` |
+| `OtpCodeCreated` | A challenge was issued | Not dispatched when delivery failed |
+
+Existing `OtpChannelSender` implementations keep working unchanged; `$delivery` is `null` for them because a `void` sender cannot confirm delivery.
+
 ## HTTP Endpoints
 
 Routes register under `first_factor_otp.route_prefix` (default `otp`) only when the module is enabled:

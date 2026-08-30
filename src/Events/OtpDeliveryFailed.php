@@ -7,11 +7,11 @@ namespace Sopheak\JwtAuth\Events;
 use Sopheak\JwtAuth\DTO\OtpDeliveryResult;
 use Sopheak\JwtAuth\DTO\OtpDispatch;
 
-final readonly class OtpCodeSent
+final readonly class OtpDeliveryFailed
 {
     public function __construct(
         public OtpDispatch $dispatch,
-        public ?OtpDeliveryResult $delivery = null,
+        public OtpDeliveryResult $result,
     ) {
     }
 }

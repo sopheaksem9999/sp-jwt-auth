@@ -84,7 +84,7 @@ Sign-in / sign-up via phone (SMS) or email OTP. Enabled with `SP_JWT_FFOTP_ENABL
 
 1. Enable the toggle and set limits in `config/sp-jwt-auth.php` (`first_factor_otp` section).
 2. Bind a `FirstFactorUserResolver` implementation in the app's service provider (resolve an existing user by destination, or create one; return null to reject) — or use the built-in default resolver (below) and skip this step.
-3. Bind an `OtpChannelSender` to deliver codes (use `OtpMessageFormatter::format()` with the config `message_template` for byte-exact SMS copy).
+3. Bind an `OtpChannelSender` to deliver codes (use `OtpMessageFormatter::format()` with the config `message_template` for byte-exact SMS copy). To reject the request when the gateway fails instead of issuing a challenge for an unsent code, implement `OtpDeliveryAwareSender` too and return `OtpDeliveryResult::failure(...)` — the broker deletes the challenge and responds 502.
 4. Optionally configure `purposes`, `requested_types`, `test_mode` + `test_code` (dev/staging only). For fixed per-account codes (dev/staging only), set `SP_JWT_FFOTP_TEST_CODES` to comma-separated `destination:code` pairs (e.g. `dev@mail.com:009988,+85511002233:123456`) — matching uses the normalized destination, and delivery is skipped for fixed codes.
 5. Endpoints: `POST /otp/request`, `POST /otp/resend`, `POST /otp/resend-by-destination`, `POST /otp/verify` (429 with `Retry-After` when limits hit).
 

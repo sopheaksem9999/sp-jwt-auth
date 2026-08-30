@@ -7,7 +7,6 @@ namespace Sopheak\JwtAuth\Services;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Str;
-use Sopheak\JwtAuth\Contracts\OtpChannelSender;
 use Sopheak\JwtAuth\DTO\OtpDestination;
 use Sopheak\JwtAuth\DTO\OtpDispatch;
 use Sopheak\JwtAuth\DTO\TokenContext;
@@ -16,14 +15,16 @@ use Sopheak\JwtAuth\Events\OtpCodeExpired;
 use Sopheak\JwtAuth\Events\OtpCodeFailed;
 use Sopheak\JwtAuth\Events\OtpCodeLocked;
 use Sopheak\JwtAuth\Events\OtpCodeResent;
-use Sopheak\JwtAuth\Events\OtpCodeSent;
 use Sopheak\JwtAuth\Events\OtpCodeVerified;
 use Sopheak\JwtAuth\Models\MfaChallenge;
 use Sopheak\JwtAuth\Models\MfaOtpCode;
 use Sopheak\JwtAuth\Security\SecretHasher;
+use Sopheak\JwtAuth\Services\Concerns\ResolvesOtpSender;
 
 final readonly class OtpChallengeBroker
 {
+    use ResolvesOtpSender;
+
     public function __construct(
         private SecretHasher $hasher,
         private MfaChallengeBroker $challenges,
@@ -54,10 +55,7 @@ final readonly class OtpChallengeBroker
 
         $dispatch = new OtpDispatch($otp->id, $challenge->id, $plaintext, $destination, $otp);
 
-        if (app()->bound(OtpChannelSender::class)) {
-            app(OtpChannelSender::class)->send($dispatch);
-            Event::dispatch(new OtpCodeSent($dispatch));
-        }
+        $this->deliverOtp($dispatch, static fn (): ?bool => $otp->delete());
 
         Event::dispatch(new OtpCodeCreated($dispatch));
         Event::dispatch('sp-jwt-auth.otp.created', [$dispatch]);

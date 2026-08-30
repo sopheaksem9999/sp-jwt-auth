@@ -291,6 +291,7 @@ $result = app(PasswordResetBroker::class)->consumeResetToken($reset->token);
 Available sender contracts:
 
 - `OtpChannelSender`
+- `OtpDeliveryAwareSender` (result-aware OTP delivery; optional)
 - `EmailVerificationSender`
 - `PasswordResetSender`
 
@@ -474,6 +475,7 @@ $result = app(PasswordResetBroker::class)->consumeResetToken($reset->token);
 Available sender contracts:
 
 - `OtpChannelSender`
+- `OtpDeliveryAwareSender` (result-aware OTP delivery; optional)
 - `EmailVerificationSender`
 - `PasswordResetSender`
 

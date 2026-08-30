@@ -28,7 +28,7 @@
         },
         {
             "name": "first-factor-otp",
-            "note": "First-factor OTP sign-in/sign-up via SMS or email. Enable sp-jwt-auth.first_factor_otp.enabled and implement the FirstFactorUserResolver contract."
+            "note": "First-factor OTP sign-in/sign-up via SMS or email. Enable sp-jwt-auth.first_factor_otp.enabled and implement the FirstFactorUserResolver contract. Bind OtpChannelSender to deliver codes, or OtpDeliveryAwareSender to also report delivery success/failure (a failure deletes the challenge and returns 502)."
         },
         {
             "name": "oauth",
