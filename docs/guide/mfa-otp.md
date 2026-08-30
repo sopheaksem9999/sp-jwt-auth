@@ -51,6 +51,8 @@ $this->app->bind(OtpChannelSender::class, AppOtpSender::class);
 
 The app can send via email, SMS, voice, WhatsApp, or another channel.
 
+To make a failed send abort the OTP instead of silently creating one, implement `OtpDeliveryAwareSender` as well and return `OtpDeliveryResult::failure(...)`. The broker then deletes the `MfaOtpCode` it just created, dispatches `OtpDeliveryFailed`, and throws `OtpDeliveryFailedException` (HTTP 502). The parent `MfaChallenge` stays alive, so the client can retry delivery or select another factor. See the first-factor OTP guide for the full sender example.
+
 ## Verify OTP Codes
 
 ```php

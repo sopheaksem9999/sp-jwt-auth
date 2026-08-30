@@ -14,7 +14,6 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
 use Sopheak\JwtAuth\Contracts\FirstFactorUserResolver;
-use Sopheak\JwtAuth\Contracts\OtpChannelSender;
 use Sopheak\JwtAuth\DTO\FirstFactorVerification;
 use Sopheak\JwtAuth\DTO\OtpDestination;
 use Sopheak\JwtAuth\DTO\OtpDispatch;
@@ -25,12 +24,14 @@ use Sopheak\JwtAuth\Events\FirstFactorOtpLocked;
 use Sopheak\JwtAuth\Events\FirstFactorOtpVerified;
 use Sopheak\JwtAuth\Events\OtpCodeCreated;
 use Sopheak\JwtAuth\Events\OtpCodeResent;
-use Sopheak\JwtAuth\Events\OtpCodeSent;
 use Sopheak\JwtAuth\Models\FirstFactorOtpCode;
 use Sopheak\JwtAuth\Security\SecretHasher;
+use Sopheak\JwtAuth\Services\Concerns\ResolvesOtpSender;
 
 final readonly class FirstFactorOtpBroker
 {
+    use ResolvesOtpSender;
+
     public function __construct(
         private SecretHasher $hasher,
         private FirstFactorUserResolver $resolver,
@@ -81,9 +82,8 @@ final readonly class FirstFactorOtpBroker
 
         $dispatch = new OtpDispatch($otp->id, $otp->id, $plaintext, $destination, $otp);
 
-        if (app()->bound(OtpChannelSender::class) && $testCode === null) {
-            app(OtpChannelSender::class)->send($dispatch);
-            Event::dispatch(new OtpCodeSent($dispatch));
+        if ($testCode === null) {
+            $this->deliverOtp($dispatch, static fn (): ?bool => $otp->delete());
         }
 
         Event::dispatch(new OtpCodeCreated($dispatch));

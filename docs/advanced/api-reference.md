@@ -32,6 +32,7 @@ description: "Key classes, contracts, DTOs, middleware, and events in sopheak/sp
 | Contract | Bind when using |
 |---|---|
 | `OtpChannelSender` | OTP delivery (email, SMS, etc.) |
+| `OtpDeliveryAwareSender` | OTP delivery that reports success/failure and a provider reference |
 | `EmailVerificationSender` | Email verification notification delivery |
 | `PasswordResetSender` | Password reset notification delivery |
 | `ExternalIdentityProvider` | Custom Socialite/OIDC provider adapter |

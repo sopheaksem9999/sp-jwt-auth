@@ -2,6 +2,21 @@
 
 All notable changes to `sopheak/sp-jwt-auth` will be documented in this file.
 
+## [0.1.22] - 2026-08-30
+
+### Added
+- `OtpDeliveryAwareSender` contract — a result-aware counterpart to `OtpChannelSender` whose `deliver()` returns an `OtpDeliveryResult` carrying `successful`, `providerReference`, and `failureReason`. A sender may implement both; the brokers prefer `deliver()`.
+- `OtpDeliveryResult` DTO with `success()` / `failure()` named constructors.
+- `OtpDeliveryFailed` event, dispatched when a result-aware sender reports a failed delivery.
+- `OtpDeliveryFailedException` (new `Sopheak\JwtAuth\Exceptions` namespace) implementing Symfony's `HttpExceptionInterface`, rendering as HTTP 502.
+- `OtpCodeSent` now carries an optional `$delivery` result — `null` for legacy `void` senders, whose delivery outcome is unknowable.
+
+### Fixed
+- A failed OTP delivery no longer leaves an orphaned challenge row or an armed resend cooldown. `FirstFactorOtpBroker::request()` and `OtpChallengeBroker::createOtp()` now delete the code they just created when a result-aware sender reports failure, so the client may retry immediately and no `OtpCodeCreated`/`OtpCodeSent` event fires for an undelivered code. The parent `MfaChallenge` is left intact.
+
+### Compatibility
+- Fully additive. `OtpChannelSender` is unchanged and existing implementations keep working with no code edit. No config keys added or changed, no migrations, no route changes.
+
 ## [0.1.21] - 2026-08-19
 
 ### Changed
