@@ -12,41 +12,42 @@ The package owns authentication infrastructure. Your application still owns pass
 
 Public package links:
 
-- Documentation: [sp-jwt-auth-docs.vercel.app](https://sp-jwt-auth-docs.vercel.app)
+- Documentation: [sp-jwt-auth-docs.vercel.app](https://sp-jwt-auth-docs.vercel.app/)
 - Packagist: [packagist.org/packages/sopheak/sp-jwt-auth](https://packagist.org/packages/sopheak/sp-jwt-auth)
+
 ## Features
 
-| Module | What it provides | Default |
-| --- | --- | --- |
-| Core JWT | `sp-jwt` guard, signed JWT access tokens, persisted `jti`, opaque rotating refresh tokens, scopes, claims, revocation, key rotation, JWKS, events, hooks | Enabled |
-| Account Security | MFA challenge broker, hashed OTP codes, email verification tokens, password reset tokens, app-owned sender contracts | Disabled |
-| API Keys | Scoped integration keys with public-id lookup, HMAC secret validation, rotation, revocation, IP restrictions, middleware | Disabled |
-| External Identity | Normalized Socialite/OIDC-style identity DTO, provider contract, external identity storage | Disabled |
-| OAuth Server | Separate `sp_oauth_*` storage, clients, consents, authorization-code + PKCE, refresh tokens, client credentials, revocation, introspection, resource middleware | Disabled |
+| Feature | What it provides | Default | Guide |
+| --- | --- | --- | --- |
+| Core JWT | `sp-jwt` guard, signed access tokens, persisted `jti`, scopes and claims, refresh rotation, revocation, signing-key rotation, and JWKS | Enabled | [Core JWT](https://sp-jwt-auth-docs.vercel.app/guide/core-jwt.html) |
+| Token context and scopes | Tenant, company, device, session, impersonation, and custom-claim context; scope middleware | Enabled | [Claims and scopes](https://sp-jwt-auth-docs.vercel.app/guide/token-context-scopes-claims.html) |
+| MFA and OTP | MFA challenges and one-time codes delivered through your app's email or phone/SMS provider | Disabled | [MFA and OTP](https://sp-jwt-auth-docs.vercel.app/guide/mfa-otp.html) |
+| First-factor OTP | Passwordless sign-in and sign-up with OTP sent to an email address or phone number; rate limits and app-owned user creation | Disabled | [First-factor OTP](https://sp-jwt-auth-docs.vercel.app/guide/first-factor-otp.html) |
+| Email verification | One-time, hashed email-verification tokens with app-owned delivery | Disabled | [Email verification](https://sp-jwt-auth-docs.vercel.app/guide/email-verification.html) |
+| Password reset | One-time, hashed reset tokens; your app retains password validation and persistence | Disabled | [Password reset](https://sp-jwt-auth-docs.vercel.app/guide/password-reset.html) |
+| JWT token endpoints | Optional HTTP endpoints for refresh rotation and session revocation | Disabled | [Token endpoints](https://sp-jwt-auth-docs.vercel.app/guide/token-endpoints.html) |
+| API keys | Scoped integration keys with HMAC validation, rotation, revocation, IP restrictions, and middleware | Disabled | [API keys](https://sp-jwt-auth-docs.vercel.app/guide/api-keys.html) |
+| Social authentication and external identity | Socialite, OIDC, and provider-profile normalization and storage for Google, GitHub, and other app-owned social-login flows | Disabled | [External identity](https://sp-jwt-auth-docs.vercel.app/guide/external-identity.html) |
+| OAuth server | Isolated OAuth storage with clients, consent, authorization code + PKCE, client credentials, revocation, introspection, and resource middleware | Disabled | [OAuth server](https://sp-jwt-auth-docs.vercel.app/guide/oauth-server.html) |
+| Events, hooks, and middleware | Lifecycle events, token-context hooks, and middleware for JWT, API-key, and OAuth protection | Enabled | [Events and hooks](https://sp-jwt-auth-docs.vercel.app/guide/events-hooks.html) · [Middleware](https://sp-jwt-auth-docs.vercel.app/guide/middleware.html) |
 
-## Requirements
+## Core package features
 
-- PHP `^8.3|^8.4|^8.5`
-- Laravel `^12.0|^13.0`
-- `firebase/php-jwt`
-- RSA signing keys for the default `RS256` setup
+The enabled-by-default core gives first-party Laravel APIs a complete, auditable token lifecycle while leaving application-specific login and authorization decisions in your app.
 
-Optional integrations are kept in Composer `suggest`:
+- **Laravel-native JWT authentication** — register the `sp-jwt` guard and protect routes with Laravel's standard `auth` middleware.
+- **Signed, key-identified access tokens** — issue RSA-signed JWTs with `kid` and persisted `jti` values; publish public keys through JWKS and rotate signing keys without exposing private material.
+- **Scoped, contextual claims** — use `TokenContext` to attach scopes and application-owned context such as company IDs, device IDs, session IDs, impersonation state, and custom claims.
+- **Safe refresh-token rotation** — refresh tokens are opaque `id.secret` values; only an HMAC hash is stored. Rotation is transactional and can revoke a session or all user sessions when reuse is detected.
+- **Explicit revocation controls** — revoke a single access token, a session, a device, or every active session for a user.
+- **Extension points and observability** — lifecycle events and `HookRegistry` hooks let your app validate or enrich token context and react to issuing, refresh, revocation, and reuse detection.
+- **Operational tooling** — Artisan commands generate and rotate keys, inspect JWKS output, prune expired records, and validate the installation configuration.
 
-- `laravel/socialite`
-- `socialiteproviders/manager`
-- `league/oauth2-client`
-- `league/oauth2-server`
+## Quick Start
 
-## Stability
+Requires PHP `^8.3|^8.4|^8.5`, Laravel `^12.0|^13.0`, and RSA signing keys for the default `RS256` setup.
 
-This package is pre-1.0. APIs, config keys, and optional module behavior may change before `v1.0.0`. Pin a tagged version in production and review the changelog before upgrading.
-
-## Installation
-
-The package is public on Packagist: [sopheak/sp-jwt-auth](https://packagist.org/packages/sopheak/sp-jwt-auth).
-
-Install it with Composer:
+Install, configure the API guard, and run migrations:
 
 ```bash
 composer require sopheak/sp-jwt-auth
@@ -55,7 +56,7 @@ php artisan migrate
 php artisan sp-jwt-auth:validate
 ```
 
-The setup command publishes config and migrations, attempts to add the Laravel `api` guard, generates local PEM signing keys with `--keys`, and writes the related JWT key paths and refresh hash secret to `.env`. If your `config/auth.php` is custom, add the guard manually:
+The setup command publishes config, generates local signing keys, and configures the Laravel `api` guard. If your `config/auth.php` is custom, add it manually:
 
 ```php
 'guards' => [
@@ -65,51 +66,6 @@ The setup command publishes config and migrations, attempts to add the Laravel `
     ],
 ],
 ```
-
-Keep Laravel's normal `web` guard for Blade, Livewire, Inertia, and session pages.
-
-For local path testing while developing the package:
-
-```bash
-composer config repositories.sp-jwt-auth '{"type":"path","url":"/absolute/path/to/sp-jwt-auth","options":{"versions":{"sopheak/sp-jwt-auth":"0.1.0"}}}'
-composer require sopheak/sp-jwt-auth:^0.1
-```
-## Configuration
-
-Publish the config when needed:
-
-```bash
-php artisan vendor:publish --tag=sp-jwt-auth-config
-```
-
-Common environment keys:
-
-```env
-SP_JWT_GUARD=api
-SP_JWT_USER_PROVIDER=users
-SP_JWT_ISSUER=https://app.example.com
-SP_JWT_AUDIENCE=app-api
-SP_JWT_ALGORITHM=RS256
-SP_JWT_ACCESS_TTL_MINUTES=15
-SP_JWT_REFRESH_TTL_DAYS=60
-SP_JWT_REUSE_DETECTION=revoke_session
-SP_JWT_ACTIVE_KID=2026-06-primary
-SP_JWT_PRIVATE_KEY_PATH=storage/jwt-private-2026-06-primary.pem
-SP_JWT_PUBLIC_KEY_PATH=storage/jwt-public-2026-06-primary.pem
-SP_JWT_HASH_KEY_ID=default
-SP_JWT_REFRESH_HASH_KEY=your-random-refresh-hash-secret
-```
-
-Optional modules have their own config sections:
-
-- `mfa`
-- `email_verification`
-- `password_reset`
-- `api_keys`
-- `external_identities`
-- `oauth_server`
-
-## Quick Start
 
 Create login and refresh endpoints in your Laravel app. Your app owns credential validation; the package owns token issuing, refresh rotation, and token response formatting.
 
@@ -166,499 +122,9 @@ Call protected routes with the returned access token:
 Authorization: Bearer <access-token>
 ```
 
-## Core JWT Usage
-
-Your app validates credentials, resolves a user, builds a `TokenContext`, then asks the package to issue tokens.
-
-```php
-use Sopheak\JwtAuth\DTO\TokenContext;
-use Sopheak\JwtAuth\Services\JwtTokenService;
-use Sopheak\JwtAuth\Support\TokenResponse;
-
-$pair = app(JwtTokenService::class)->issueTokenPair(
-    $user,
-    TokenContext::make()
-        ->companyId(42)
-        ->companyIds([42, 84])
-        ->scopes(['invoices.read', 'invoices.write'])
-        ->impersonated(false),
-);
-
-return TokenResponse::passportCompatible($pair);
-```
-
-Read claims from the authenticated token:
-
-```php
-$token = $request->user()?->token();
-
-$companyId = $token?->claim('company_id');
-$claims = $token?->claims ?? [];
-```
-
-For response fields owned by the app, pass extra data to the response helper or register a response extension:
-
-```php
-return TokenResponse::passportCompatible($pair, [
-    'company_id' => $pair->accessTokenRecord->companyId(),
-]);
-
-TokenResponse::extend(function (array $response, TokenPair $pair): array {
-    $response['company_id'] = $pair->accessTokenRecord->companyId();
-    $response['impersonated'] = $pair->accessTokenRecord->isImpersonated();
-
-    return $response;
-});
-```
-
-=======
->>>>>>> 11e06a7 (feat: add complete Laravel JWT auth package with OAuth support)
-Protect routes with Laravel auth middleware:
-
-```php
-Route::middleware(['auth:api'])->get('/me', MeController::class);
-
-Route::middleware(['auth:api', 'sp.jwt.scope:invoices.read'])
-    ->get('/invoices', InvoiceIndexController::class);
-```
-
-Add Passport-like helpers to user models:
-
-```php
-use Sopheak\JwtAuth\Traits\HasJwtTokens;
-
-class User extends Authenticatable
-{
-    use HasJwtTokens;
-}
-```
-
-```php
-$request->user()->token();
-$request->user()->tokenCan('invoices.read');
-```
-
-## Refresh and Revocation
-
-Refresh tokens are returned as `id.secret`. Only the HMAC hash of the secret is stored.
-
-```php
-$pair = app(JwtTokenService::class)->rotateRefreshToken(
-    $request->input('refresh_token'),
-);
-```
-
-Revoke one access token, one session, or all sessions for a user:
-
-```php
-$token = $request->user()->token();
-
-app(JwtTokenService::class)->revokeAccessToken($token->id);
-app(JwtTokenService::class)->revokeSession($token->session_id);
-app(JwtTokenService::class)->revokeAllForUser($request->user());
-```
-
-## Account Security
-
-Account security brokers can be called from controllers, Livewire actions, queued jobs, or service classes. Delivery is app-owned through sender contracts.
-
-```php
-use Sopheak\JwtAuth\DTO\OtpDestination;
-use Sopheak\JwtAuth\Services\EmailVerificationBroker;
-use Sopheak\JwtAuth\Services\MfaChallengeBroker;
-use Sopheak\JwtAuth\Services\OtpChallengeBroker;
-use Sopheak\JwtAuth\Services\PasswordResetBroker;
-
-$challenge = app(MfaChallengeBroker::class)->create($user, TokenContext::make());
-
-$otp = app(OtpChallengeBroker::class)->createOtp(
-    $challenge,
-    new OtpDestination('email', 'user@example.com', 'u***@example.com'),
-);
-
-$context = app(OtpChallengeBroker::class)->verifyOtp($challenge->id, $otp->plaintextCode);
-
-$verification = app(EmailVerificationBroker::class)
-    ->createVerificationToken($user, $user->email);
-
-$verified = app(EmailVerificationBroker::class)
-    ->verifyEmailToken($verification->token);
-
-$reset = app(PasswordResetBroker::class)->createResetToken($user, $user->email);
-$result = app(PasswordResetBroker::class)->consumeResetToken($reset->token);
-```
-
-Available sender contracts:
-
-- `OtpChannelSender`
-- `OtpDeliveryAwareSender` (result-aware OTP delivery; optional)
-- `EmailVerificationSender`
-- `PasswordResetSender`
-
-## API Keys
-
-API keys are for third-party integrations and machine clients. The full plaintext key is returned only at creation or rotation time.
-
-```php
-use Sopheak\JwtAuth\DTO\ApiKeyContext;
-use Sopheak\JwtAuth\Services\ApiKeyService;
-
-$key = app(ApiKeyService::class)->createApiKey(new ApiKeyContext(
-    ownerType: 'tenant',
-    ownerId: '42',
-    name: 'ERP sync',
-    scopes: ['invoices.write'],
-    claims: ['tenant_id' => 42],
-));
-```
-
-Protect integration routes:
-
-```php
-Route::middleware(['sp.api_key', 'sp.api_key.scope:invoices.write'])
-    ->post('/integrations/invoices', IntegrationInvoiceController::class);
-```
-
-Rotate or revoke:
-
-```php
-$rotated = app(ApiKeyService::class)->rotateApiKey($apiKeyId);
-app(ApiKeyService::class)->revokeApiKey($apiKeyId);
-app(ApiKeyService::class)->revokeApiKeysForOwner('tenant', '42');
-```
-
-## External Identity
-
-External identity support normalizes provider profiles. The app decides whether to link, create, or deny a local user.
-
-```php
-use Sopheak\JwtAuth\DTO\ExternalIdentity;
-use Sopheak\JwtAuth\Services\ExternalIdentityStore;
-
-app(ExternalIdentityStore::class)->store(new ExternalIdentity(
-    provider: 'google',
-    providerUserId: $providerUser->getId(),
-    email: $providerUser->getEmail(),
-    emailVerified: true,
-    name: $providerUser->getName(),
-    rawProfile: $providerUser->user,
-), $user);
-```
-
-Provider adapters can implement `Sopheak\JwtAuth\Contracts\ExternalIdentityProvider`.
-
-## OAuth Server Mode
-
-OAuth server mode is disabled by default and uses separate `sp_oauth_*` tables. It is for third-party clients, not normal first-party SPA/mobile login.
-
-```env
-SP_JWT_OAUTH_SERVER_ENABLED=true
-```
-
-Create a client:
-
-```php
-use Sopheak\JwtAuth\DTO\OAuthClientData;
-use Sopheak\JwtAuth\Services\OAuthClientRepository;
-
-$client = app(OAuthClientRepository::class)->createClient(new OAuthClientData(
-    name: 'ERP Connector',
-    redirectUris: ['https://client.example/callback'],
-    allowedGrants: ['authorization_code', 'refresh_token'],
-    allowedScopes: ['invoices.read'],
-));
-```
-
-Protect OAuth resource routes:
-
-```php
-Route::middleware(['sp.oauth', 'sp.oauth.scope:invoices.read'])
-    ->get('/partner/invoices', PartnerInvoiceController::class);
-```
-
-OAuth client-credentials tokens authenticate as clients, not users.
-
-## Middleware
-
-| Middleware | Purpose |
-| --- | --- |
-| `sp.jwt` | Authenticate with the configured first-party JWT guard |
-| `sp.jwt.scope:<scope>` | Require every listed JWT scope |
-| `sp.jwt.any_scope:<scope1>,<scope2>` | Require any listed JWT scope |
-| `sp.api_key` | Authenticate an API key bearer token |
-| `sp.api_key.scope:<scope>` | Require every listed API key scope |
-| `sp.api_key.any_scope:<scope1>,<scope2>` | Require any listed API key scope |
-| `sp.oauth` | Authenticate an OAuth resource token |
-| `sp.oauth.scope:<scope>` | Require every listed OAuth scope |
-| `sp.oauth.any_scope:<scope1>,<scope2>` | Require any listed OAuth scope |
-| `sp.oauth.client:<client_id>` | Restrict OAuth access to a client id |
-
-## Commands
-
-```bash
-php artisan sp-jwt-auth:install --keys
-php artisan sp-jwt-auth:keys --generate --kid=2026-06-primary
-php artisan sp-jwt-auth:jwks --pretty
-php artisan sp-jwt-auth:prune --expired-days=30 --revoked-days=30
-```
-
-## Events and Hooks
-
-The package emits lifecycle events for:
-
-- Token issue, refresh, revocation, sessions, and refresh reuse detection.
-- MFA, OTP, email verification, and password reset.
-- API key creation, use, revocation, and rotation.
-- External identity resolution.
-- OAuth clients, consents, authorization approval, token issue, and token revocation.
-
-`HookRegistry` supports token-context validation, token-context mutation, and after-issue hooks for app-owned policy.
-
-## Security Notes
-
-- JWTs are signed with package signing keys, never `APP_KEY`.
-- JWKS exposes public keys only.
-- Refresh tokens, OTP codes, verification tokens, reset tokens, API keys, OAuth client secrets, and OAuth opaque tokens are stored as HMAC hashes.
-- Refresh rotation runs in a transaction and detects reuse.
-- OAuth tokens use separate storage and middleware from first-party JWT tokens.
-- Optional modules are disabled by default and can be enabled incrementally.
-
 ## Documentation
 
-- [Guide index](docs/guide/index.md)
-- [Getting started](docs/guide/getting-started.md)
-- [Core JWT](docs/guide/core-jwt.md)
-- [Account security](docs/guide/mfa-otp.md)
-- [API keys](docs/guide/api-keys.md)
-- [External identity](docs/guide/external-identity.md)
-- [OAuth server](docs/guide/oauth-server.md)
-- [Events and hooks](docs/guide/events-hooks.md)
-
-## Development
-
-```bash
-composer install
-composer quality
-```
-
-`composer quality` runs Rector dry-run, PHPStan, and PHPUnit.
-
-## License
->>>>>>> 11e06a7 (feat: add complete Laravel JWT auth package with OAuth support)
-
-```php
-use Sopheak\JwtAuth\DTO\OtpDestination;
-use Sopheak\JwtAuth\Services\EmailVerificationBroker;
-use Sopheak\JwtAuth\Services\MfaChallengeBroker;
-use Sopheak\JwtAuth\Services\OtpChallengeBroker;
-use Sopheak\JwtAuth\Services\PasswordResetBroker;
-
-$challenge = app(MfaChallengeBroker::class)->create($user, TokenContext::make());
-
-$otp = app(OtpChallengeBroker::class)->createOtp(
-    $challenge,
-    new OtpDestination('email', 'user@example.com', 'u***@example.com'),
-);
-
-$context = app(OtpChallengeBroker::class)->verifyOtp($challenge->id, $otp->plaintextCode);
-
-$verification = app(EmailVerificationBroker::class)
-    ->createVerificationToken($user, $user->email);
-
-$verified = app(EmailVerificationBroker::class)
-    ->verifyEmailToken($verification->token);
-
-$reset = app(PasswordResetBroker::class)->createResetToken($user, $user->email);
-$result = app(PasswordResetBroker::class)->consumeResetToken($reset->token);
-```
-
-Available sender contracts:
-
-- `OtpChannelSender`
-- `OtpDeliveryAwareSender` (result-aware OTP delivery; optional)
-- `EmailVerificationSender`
-- `PasswordResetSender`
-
-## API Keys
-
-API keys are for third-party integrations and machine clients. The full plaintext key is returned only at creation or rotation time.
-
-```php
-use Sopheak\JwtAuth\DTO\ApiKeyContext;
-use Sopheak\JwtAuth\Services\ApiKeyService;
-
-$key = app(ApiKeyService::class)->createApiKey(ApiKeyContext::forCompany(
-    companyId: 42,
-    name: 'QuickBooks sync worker',
-    scopes: ['qbo.sync', 'invoices.write'],
-));
-```
-
-Protect integration routes:
-
-```php
-Route::middleware(['sp.api_key', 'sp.api_key.scope:invoices.write'])
-    ->post('/integrations/invoices', IntegrationInvoiceController::class);
-```
-
-Rotate or revoke:
-
-```php
-$rotated = app(ApiKeyService::class)->rotateApiKey($apiKeyId);
-app(ApiKeyService::class)->revokeApiKey($apiKeyId);
-app(ApiKeyService::class)->revokeApiKeysForOwner('tenant', '42');
-```
-
-## External Identity
-
-External identity support normalizes provider profiles. The app decides whether to link, create, or deny a local user.
-
-```php
-use Sopheak\JwtAuth\DTO\ExternalIdentity;
-use Sopheak\JwtAuth\Services\ExternalIdentityStore;
-
-app(ExternalIdentityStore::class)->store(new ExternalIdentity(
-    provider: 'google',
-    providerUserId: $providerUser->getId(),
-    email: $providerUser->getEmail(),
-    emailVerified: true,
-    name: $providerUser->getName(),
-    rawProfile: $providerUser->user,
-), $user);
-```
-
-Provider adapters can implement `Sopheak\JwtAuth\Contracts\ExternalIdentityProvider`.
-
-## OAuth Server Mode
-
-OAuth server mode is disabled by default and uses separate `sp_oauth_*` tables. It is for third-party clients, not normal first-party SPA/mobile login.
-
-```env
-SP_JWT_OAUTH_SERVER_ENABLED=true
-```
-
-Create a client:
-
-```php
-use Sopheak\JwtAuth\DTO\OAuthClientData;
-use Sopheak\JwtAuth\Services\OAuthClientRepository;
-
-$client = app(OAuthClientRepository::class)->createClient(new OAuthClientData(
-    name: 'ERP Connector',
-    redirectUris: ['https://client.example/callback'],
-    allowedGrants: ['authorization_code', 'refresh_token'],
-    allowedScopes: ['invoices.read'],
-));
-```
-
-Protect OAuth resource routes:
-
-```php
-Route::middleware(['sp.oauth', 'sp.oauth.scope:invoices.read'])
-    ->get('/partner/invoices', PartnerInvoiceController::class);
-```
-
-OAuth client-credentials tokens authenticate as clients, not users.
-
-## Middleware
-
-| Middleware | Purpose |
-| --- | --- |
-| `sp.jwt` | Authenticate with the configured first-party JWT guard |
-| `sp.jwt.scope:<scope>` | Require every listed JWT scope |
-| `sp.jwt.any_scope:<scope1>,<scope2>` | Require any listed JWT scope |
-| `sp.api_key` | Authenticate an API key bearer token |
-| `sp.api_key.scope:<scope>` | Require every listed API key scope |
-| `sp.api_key.any_scope:<scope1>,<scope2>` | Require any listed API key scope |
-| `sp.oauth` | Authenticate an OAuth resource token |
-| `sp.oauth.scope:<scope>` | Require every listed OAuth scope |
-| `sp.oauth.any_scope:<scope1>,<scope2>` | Require any listed OAuth scope |
-| `sp.oauth.client:<client_id>` | Restrict OAuth access to a client id |
-
-## Commands
-
-```bash
-php artisan sp-jwt-auth:install --keys
-php artisan sp-jwt-auth:setup --keys
-php artisan sp-jwt-auth:validate
-php artisan sp-jwt-auth:keys --generate --kid=2026-06-primary
-php artisan sp-jwt-auth:jwks --pretty
-php artisan sp-jwt-auth:prune --expired-days=30 --revoked-days=30
-```
-
-`sp-jwt-auth:keys --generate` and `--rotate` update `.env` by default with `SP_JWT_ACTIVE_KID`, `SP_JWT_PRIVATE_KEY_PATH`, and `SP_JWT_PUBLIC_KEY_PATH`. They also create `SP_JWT_REFRESH_HASH_KEY` when it is missing, without replacing an existing refresh hash secret. Use `--no-write-env` when your deployment manages environment values outside Artisan.
-
-## Events and Hooks
-
-The package emits lifecycle events for:
-
-- Token issue, refresh, revocation, sessions, and refresh reuse detection.
-- MFA, OTP, email verification, and password reset.
-- API key creation, use, revocation, and rotation.
-- External identity resolution.
-- OAuth clients, consents, authorization approval, token issue, and token revocation.
-
-`HookRegistry` supports token-context validation, token-context mutation, and after-issue hooks for app-owned policy.
-
-## Security Notes
-
-- JWTs are signed with package signing keys, never `APP_KEY`.
-- JWKS exposes public keys only.
-- Refresh tokens, OTP codes, verification tokens, reset tokens, API keys, OAuth client secrets, and OAuth opaque tokens are stored as HMAC hashes.
-- Refresh rotation runs in a transaction and detects reuse.
-- OAuth tokens use separate storage and middleware from first-party JWT tokens.
-- Optional modules are disabled by default and can be enabled incrementally.
-
-## Documentation
-
-- [Documentation site](https://sp-jwt-auth-docs.vercel.app)
-- [Packagist package](https://packagist.org/packages/sopheak/sp-jwt-auth)
-- [Documentation site](https://sp-jwt-auth-docs.vercel.app)
-- [Packagist package](https://packagist.org/packages/sopheak/sp-jwt-auth)
-- [Getting started](docs/getting-started/installation.md)
-- [Quick start](docs/getting-started/quick-start.md)
-- [Auth controller example](docs/tutorials/auth-controller.md)
-- [SPA and mobile integration](docs/tutorials/spa-mobile-integration.md)
-- [API key client usage](docs/tutorials/api-key-client-usage.md)
-- [OAuth authorization code](docs/tutorials/oauth-server-authorization-code.md)
-- [OAuth client credentials](docs/tutorials/oauth-server-client-credentials.md)
-- [MFA login](docs/tutorials/login-with-mfa.md)
-- [Core JWT](docs/core-concepts/core-jwt.md)
-- [Configuration](docs/core-concepts/configuration.md)
-- [Account security](docs/features/mfa-otp.md)
-- [API keys](docs/features/api-keys.md)
-- [External identity](docs/features/external-identity.md)
-- [OAuth server](docs/features/oauth-server.md)
-- [Events and hooks](docs/features/events-hooks.md)
-- [Middleware](docs/features/middleware.md)
-
-## Development
-
-```bash
-composer install
-composer quality
-```
-
-`composer quality` runs Rector dry-run, PHPStan, and PHPUnit.
-
-## Release
-
-Packagist versions are created from Git tags:
-
-```bash
-git tag v1.0.0
-git push origin v1.0.0
-```
-
-Packagist is already configured at [packagist.org/packages/sopheak/sp-jwt-auth](https://packagist.org/packages/sopheak/sp-jwt-auth). After pushing a new tag, Packagist makes the release available to Composer.
-
-## Community
-
-- Use GitHub Issues for reproducible bugs and focused feature requests.
-- Use GitHub Discussions for questions, roadmap ideas, and integration help.
-- See [SUPPORT.md](SUPPORT.md) for support channels and security boundaries.
-- Report vulnerabilities through GitHub Security Advisories or the process in [SECURITY.md](SECURITY.md).
-- Contributions are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) and [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).
+For configuration, token claims, refresh and revocation, account-security workflows, API keys, external identity, OAuth server mode, middleware, and deployment guidance, visit the [official sp-jwt-auth documentation](https://sp-jwt-auth-docs.vercel.app/).
 
 ## License
 
