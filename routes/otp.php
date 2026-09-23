@@ -26,6 +26,7 @@ Route::prefix((string) config('sp-jwt-auth.first_factor_otp.route_prefix', 'otp'
                 $destination,
                 $data['purpose'],
                 is_string($data['requested_type'] ?? null) ? $data['requested_type'] : null,
+                $request->ip(),
             );
         } catch (\InvalidArgumentException $e) {
             return response()->json(['message' => $e->getMessage()], 422);
@@ -36,7 +37,7 @@ Route::prefix((string) config('sp-jwt-auth.first_factor_otp.route_prefix', 'otp'
             'destination_masked' => $destination->maskedDestination,
             'expires_in' => (int) config('sp-jwt-auth.first_factor_otp.ttl_minutes', 5) * 60,
         ], (string) config('sp-jwt-auth.first_factor_otp.response_envelope', 'raw')), 202);
-    })->middleware('throttle:sp-jwt-ffotp-request');
+    });
 
     Route::post('/resend', static function (Request $request, FirstFactorOtpBroker $broker) {
         $data = $request->validate([
@@ -50,7 +51,7 @@ Route::prefix((string) config('sp-jwt-auth.first_factor_otp.route_prefix', 'otp'
             : OtpDestination::phone($data['destination']);
 
         try {
-            $dispatch = $broker->resend($data['otp_id'], $destination);
+            $dispatch = $broker->resend($data['otp_id'], $destination, $request->ip());
         } catch (\InvalidArgumentException $e) {
             return response()->json(['message' => $e->getMessage()], 422);
         }
@@ -60,7 +61,7 @@ Route::prefix((string) config('sp-jwt-auth.first_factor_otp.route_prefix', 'otp'
             'destination_masked' => $destination->maskedDestination,
             'expires_in' => (int) config('sp-jwt-auth.first_factor_otp.ttl_minutes', 5) * 60,
         ], (string) config('sp-jwt-auth.first_factor_otp.response_envelope', 'raw')), 202);
-    })->middleware('throttle:sp-jwt-ffotp-request');
+    });
 
     Route::post('/resend-by-destination', static function (Request $request, FirstFactorOtpBroker $broker) {
         $data = $request->validate([
@@ -74,7 +75,7 @@ Route::prefix((string) config('sp-jwt-auth.first_factor_otp.route_prefix', 'otp'
             : OtpDestination::phone($data['destination']);
 
         try {
-            $dispatch = $broker->resendByDestination($destination, $data['purpose']);
+            $dispatch = $broker->resendByDestination($destination, $data['purpose'], $request->ip());
         } catch (\InvalidArgumentException $e) {
             return response()->json(['message' => $e->getMessage()], 422);
         }
@@ -84,7 +85,7 @@ Route::prefix((string) config('sp-jwt-auth.first_factor_otp.route_prefix', 'otp'
             'destination_masked' => $destination->maskedDestination,
             'expires_in' => (int) config('sp-jwt-auth.first_factor_otp.ttl_minutes', 5) * 60,
         ], (string) config('sp-jwt-auth.first_factor_otp.response_envelope', 'raw')), 202);
-    })->middleware('throttle:sp-jwt-ffotp-request');
+    });
 
     Route::post('/verify', static function (Request $request, FirstFactorOtpBroker $broker) {
         $data = $request->validate([
@@ -103,7 +104,7 @@ Route::prefix((string) config('sp-jwt-auth.first_factor_otp.route_prefix', 'otp'
         }
 
         try {
-            $verification = $broker->verify($data['otp_id'], $data['code'], $destination);
+            $verification = $broker->verify($data['otp_id'], $data['code'], $destination, $request->ip());
         } catch (\InvalidArgumentException $e) {
             return response()->json(['message' => $e->getMessage()], 422);
         }
@@ -127,5 +128,5 @@ Route::prefix((string) config('sp-jwt-auth.first_factor_otp.route_prefix', 'otp'
         }
 
         return response()->json(ResponseEnvelope::wrap($payload, $mode));
-    })->middleware('throttle:sp-jwt-ffotp-verify');
+    });
 });

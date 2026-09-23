@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sopheak\JwtAuth\Services;
 
+use Throwable;
 use Symfony\Component\HttpKernel\Exception\TooManyRequestsHttpException;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Contracts\Auth\Authenticatable;
@@ -36,10 +37,11 @@ final readonly class FirstFactorOtpBroker
         private SecretHasher $hasher,
         private FirstFactorUserResolver $resolver,
         private JwtTokenService $jwt,
+        private FirstFactorOtpRatePolicy $ratePolicy,
     ) {
     }
 
-    public function request(OtpDestination $destination, string $purpose, ?string $requestedType = null): OtpDispatch
+    public function request(OtpDestination $destination, string $purpose, ?string $requestedType = null, ?string $ip = null): OtpDispatch
     {
         $this->assertPurposeAllowed($purpose);
         $this->assertRequestedTypeAllowed($requestedType);
@@ -47,11 +49,24 @@ final readonly class FirstFactorOtpBroker
         $otp = $this->latestActive($destination, $purpose);
 
         if ($otp instanceof FirstFactorOtpCode && ! $otp->last_sent_at->addSeconds($this->cooldownSeconds())->isPast()) {
-            $retryAfter = (int) $otp->last_sent_at->addSeconds($this->cooldownSeconds())->diffInSeconds(now(), false);
+            $retryAfter = $otp->last_sent_at->addSeconds($this->cooldownSeconds())->getTimestamp() - now()->getTimestamp();
 
             throw new TooManyRequestsHttpException(max(1, $retryAfter), 'Too many requests.');
         }
 
+        $reservation = $this->ratePolicy->reserveSend($destination, $this->resolveIp($ip));
+
+        try {
+            return $this->issue($destination, $purpose, $requestedType);
+        } catch (Throwable $throwable) {
+            $this->ratePolicy->releaseSend($reservation);
+
+            throw $throwable;
+        }
+    }
+
+    private function issue(OtpDestination $destination, string $purpose, ?string $requestedType): OtpDispatch
+    {
         $this->invalidatePrior($destination, $purpose);
 
         $testCode = $this->testCodeFor($destination);
@@ -89,7 +104,7 @@ final readonly class FirstFactorOtpBroker
         return $dispatch;
     }
 
-    public function resend(string $otpId, OtpDestination $destination): OtpDispatch
+    public function resend(string $otpId, OtpDestination $destination, ?string $ip = null): OtpDispatch
     {
         $otp = FirstFactorOtpCode::query()->findOrFail($otpId);
 
@@ -100,19 +115,19 @@ final readonly class FirstFactorOtpBroker
         }
 
         if (! $otp->last_sent_at->addSeconds($this->cooldownSeconds())->isPast()) {
-            $retryAfter = (int) $otp->last_sent_at->addSeconds($this->cooldownSeconds())->diffInSeconds(now(), false);
+            $retryAfter = $otp->last_sent_at->addSeconds($this->cooldownSeconds())->getTimestamp() - now()->getTimestamp();
 
             throw new TooManyRequestsHttpException(max(1, $retryAfter), 'Too many requests.');
         }
 
-        $dispatch = $this->request($destination, $otp->purpose, $otp->requested_type);
+        $dispatch = $this->request($destination, $otp->purpose, $otp->requested_type, $ip);
 
         Event::dispatch(new OtpCodeResent($dispatch));
 
         return $dispatch;
     }
 
-    public function resendByDestination(OtpDestination $destination, string $purpose): OtpDispatch
+    public function resendByDestination(OtpDestination $destination, string $purpose, ?string $ip = null): OtpDispatch
     {
         $otp = $this->latestActive($destination, $purpose);
 
@@ -120,11 +135,13 @@ final readonly class FirstFactorOtpBroker
             throw new InvalidArgumentException('No active challenge for destination and purpose.');
         }
 
-        return $this->resend($otp->id, $destination);
+        return $this->resend($otp->id, $destination, $ip);
     }
 
-    public function verify(string $otpId, string $code, ?OtpDestination $destination = null): FirstFactorVerification
+    public function verify(string $otpId, string $code, ?OtpDestination $destination = null, ?string $ip = null): FirstFactorVerification
     {
+        $this->ratePolicy->hitVerify($this->resolveIp($ip));
+
         if ($destination instanceof OtpDestination) {
             $destinationHash = $this->hasher->hash($destination->normalizedDestination);
 
@@ -306,5 +323,10 @@ final readonly class FirstFactorOtpBroker
     private function cooldownSeconds(): int
     {
         return (int) config('sp-jwt-auth.first_factor_otp.resend_cooldown_seconds', 60);
+    }
+
+    private function resolveIp(?string $ip): ?string
+    {
+        return $ip ?? (app()->bound('request') ? app('request')->ip() : null);
     }
 }

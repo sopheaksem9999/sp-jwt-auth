@@ -75,6 +75,11 @@ return [
             'request_per_ip' => (int) env('SP_JWT_FFOTP_LIMIT_REQUEST_IP', 20),
             'verify_per_ip' => (int) env('SP_JWT_FFOTP_LIMIT_VERIFY_IP', 30),
             'decay_minutes' => (int) env('SP_JWT_FFOTP_LIMIT_DECAY_MINUTES', 60),
+            // Set each policy to ['max_attempts' => 30, 'decay_seconds' => 3600].
+            // Null preserves the legacy count and shared decay window above.
+            'send_per_destination' => null,
+            'send_per_ip' => null,
+            'sms_per_project' => null,
         ],
         'message_template' => [
             'sms' => env('SP_JWT_FFOTP_SMS_TEMPLATE', 'Your {app} verification code is {code}. Valid for {ttl} minutes.'),

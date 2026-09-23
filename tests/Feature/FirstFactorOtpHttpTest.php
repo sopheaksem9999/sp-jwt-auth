@@ -8,6 +8,7 @@ use Override;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Sopheak\JwtAuth\Contracts\FirstFactorUserResolver;
 use Sopheak\JwtAuth\DTO\OtpDestination;
+use Sopheak\JwtAuth\Services\FirstFactorOtpBroker;
 use Sopheak\JwtAuth\Tests\Fixtures\User;
 use Sopheak\JwtAuth\Tests\TestCase;
 
@@ -101,6 +102,26 @@ final class FirstFactorOtpHttpTest extends TestCase
         $this->postJson('/otp/request', $payload)->assertStatus(202);
 
         $this->postJson('/otp/request', $payload)->assertStatus(429)->assertHeader('Retry-After');
+    }
+
+    public function test_http_requests_share_the_sms_quota_with_direct_broker_calls(): void
+    {
+        $this->bindResolver($this->createUser());
+        config()->set('sp-jwt-auth.first_factor_otp.limits.sms_per_project', ['max_attempts' => 1, 'decay_seconds' => 3600]);
+
+        app(FirstFactorOtpBroker::class)->request(OtpDestination::phone('+85512345670'), 'login', ip: '192.0.2.40');
+
+        $this->postJson('/otp/request', [
+            'destination' => '+85512345671',
+            'channel' => 'sms',
+            'purpose' => 'login',
+        ])->assertStatus(429)->assertHeader('Retry-After');
+
+        $this->postJson('/otp/request', [
+            'destination' => 'other@example.com',
+            'channel' => 'email',
+            'purpose' => 'login',
+        ])->assertStatus(202);
     }
 
     public function test_request_endpoint_rejects_unknown_purpose_with_422(): void

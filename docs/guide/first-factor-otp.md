@@ -35,8 +35,11 @@ SP_JWT_FFOTP_ENABLED=true
 | `first_factor_otp.test_codes` | `SP_JWT_FFOTP_TEST_CODES` | `''` | Comma-separated `destination:code` pairs (e.g. `dev@mail.com:009988,+85511002233:123456`); a matching destination uses that fixed code. Matching is against the normalized destination (email lowercased, phone without whitespace). |
 | `first_factor_otp.limits.request_per_destination` | `SP_JWT_FFOTP_LIMIT_REQUEST_DESTINATION` | `5` | Request/resend limit per destination within the decay window. |
 | `first_factor_otp.limits.request_per_ip` | `SP_JWT_FFOTP_LIMIT_REQUEST_IP` | `20` | Request/resend limit per IP within the decay window. |
-| `first_factor_otp.limits.verify_per_ip` | `SP_JWT_FFOTP_LIMIT_VERIFY_IP` | `30` | Verify limit per IP within the decay window. |
+| `first_factor_otp.limits.verify_per_ip` | `SP_JWT_FFOTP_LIMIT_VERIFY_IP` | `30` | Legacy count per IP within the shared decay window; replace with a `max_attempts`/`decay_seconds` array for an independent window. |
 | `first_factor_otp.limits.decay_minutes` | `SP_JWT_FFOTP_LIMIT_DECAY_MINUTES` | `60` | Rate-limit window length in minutes. |
+| `first_factor_otp.limits.send_per_destination` | — | `null` | Optional `max_attempts` and `decay_seconds` for requests and resends to one destination. |
+| `first_factor_otp.limits.send_per_ip` | — | `null` | Optional independent send limit per caller IP. |
+| `first_factor_otp.limits.sms_per_project` | — | `null` | Optional project-wide SMS quota across all destinations and send operations. Email does not use this quota. |
 | `first_factor_otp.message_template.sms` | `SP_JWT_FFOTP_SMS_TEMPLATE` | `Your {app} verification code is {code}. Valid for {ttl} minutes.` | SMS message template. |
 | `first_factor_otp.message_template.email` | `SP_JWT_FFOTP_EMAIL_TEMPLATE` | `Your {app} verification code is {code}. Valid for {ttl} minutes.` | Email message template. |
 | `first_factor_otp.user_model` | `SP_JWT_FFOTP_USER_MODEL` | `null` | User model for the built-in default resolver; setting it binds `DefaultFirstFactorUserResolver`. Unset keeps the module contract-only. |
@@ -186,7 +189,35 @@ Routes register under `first_factor_otp.route_prefix` (default `otp`) only when 
 
 `/otp/resend-by-destination` re-issues the latest active challenge for the destination and purpose, inheriting its `requested_type` and sharing the same cooldown and rate limits — it responds `422` when no active challenge exists.
 
-The plaintext code is never returned by an endpoint. `request` and `resend` share a cooldown and per-destination/per-IP rate limits; `verify` is rate limited per IP. Limits respond with `429` and a `Retry-After` header. Client errors such as an unknown purpose (when a purpose allowlist is configured) or a destination mismatch map to `422`.
+The plaintext code is never returned by an endpoint. `request`, `resend`, and `resend-by-destination` share send limits and the per-destination cooldown; `verify` uses its own per-IP limit. Limits respond with `429` and a `Retry-After` header showing the remaining seconds. Client errors such as an unknown purpose (when a purpose allowlist is configured) or a destination mismatch map to `422`.
+
+### Independent rate-limit policies
+
+Set policies in the published `config/sp-jwt-auth.php` to use different windows. Each policy is optional. When omitted, `request_per_destination`, `request_per_ip`, `verify_per_ip`, and `decay_minutes` retain their legacy behavior. The project SMS quota is disabled until configured.
+
+```php
+'limits' => [
+    'request_per_destination' => 5, // legacy fallback
+    'request_per_ip' => 20,          // legacy fallback
+    'verify_per_ip' => ['max_attempts' => 30, 'decay_seconds' => 300],
+    'decay_minutes' => 60,           // legacy fallback
+    'send_per_destination' => ['max_attempts' => 30, 'decay_seconds' => 3600],
+    'send_per_ip' => ['max_attempts' => 30, 'decay_seconds' => 300],
+    'sms_per_project' => ['max_attempts' => 30, 'decay_seconds' => 3600],
+],
+'resend_cooldown_seconds' => 60,
+```
+
+The broker enforces these policies for package routes and application-owned endpoints. Pass the caller IP when invoking it from your own route:
+
+```php
+$dispatch = $broker->request($destination, 'login', ip: $request->ip());
+$dispatch = $broker->resend($otpId, $destination, ip: $request->ip());
+$dispatch = $broker->resendByDestination($destination, 'login', ip: $request->ip());
+$verification = $broker->verify($otpId, $code, ip: $request->ip());
+```
+
+The broker uses the bound Laravel request IP when no IP is passed. For workers without an HTTP request, pass the caller IP explicitly if per-IP policy is required. Counters and the atomic SMS reservation use Laravel's `cache.limiter` store, or `cache.default` when no limiter store is configured. Configure that store as a shared, lock-capable cache such as Redis for multi-worker or multi-instance deployments. Failed delivery releases its reservation and removes the challenge, allowing an immediate retry.
 
 ## Security Notes
 

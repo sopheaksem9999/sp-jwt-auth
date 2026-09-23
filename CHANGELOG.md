@@ -2,6 +2,19 @@
 
 All notable changes to `sopheak/sp-jwt-auth` will be documented in this file.
 
+## [0.1.24] - 2026-09-23
+
+### Added
+- Independent first-factor OTP send-per-destination, send-per-IP, and verify-per-IP rate-limit policies, each with its own attempt count and decay window.
+- Optional project-wide SMS quota shared by request and resend operations; email sends do not consume it. Broker and package HTTP routes enforce the same policy through Laravel's limiter cache.
+- Atomic quota reservations using cache locks; failed OTP delivery releases its reservation so an immediate retry is possible.
+
+### Fixed
+- First-factor OTP cooldown responses now report the actual remaining `Retry-After` seconds.
+
+### Compatibility
+- Existing `request_per_destination`, `request_per_ip`, `verify_per_ip`, and `decay_minutes` settings remain the fallback when independent policies are not configured. The project SMS quota is disabled by default.
+
 ## [0.1.23] - 2026-08-30
 
 ### Added
