@@ -36,12 +36,18 @@
     }
   },
   "skills": {
-    "paths": [".opencode/skills"]
+    "paths": [
+      ".opencode/skills"
+    ]
   },
   "formatter": {
     "php": {
-      "command": ["./vendor/bin/pint"],
-      "extensions": ["php"]
+      "command": [
+        "./vendor/bin/pint"
+      ],
+      "extensions": [
+        "php"
+      ]
     }
   },
   "tool_output": {
@@ -70,6 +76,13 @@
     }
   },
   "mcp": {
-    
+    "graft": {
+      "type": "local",
+      "command": [
+        "graft",
+        "mcp"
+      ],
+      "enabled": true
+    }
   }
 }
