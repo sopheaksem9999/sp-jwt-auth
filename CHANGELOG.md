@@ -2,6 +2,11 @@
 
 All notable changes to `sopheak/sp-jwt-auth` will be documented in this file.
 
+## [Unreleased]
+
+### Security
+- Upgrade the PHP runtime on every server that handles web requests to 8.5.12, 8.4.27, or 8.3.36 (the versions this package supports), or install your distro's or LTS vendor's patched build. These releases fix two critical remote code execution vulnerabilities in the PHP engine (CVE-2026-109618, CVE-2026-109619). PHP-FPM, Apache with mod_php, php-cgi, FrankenPHP, and LiteSpeed are affected; restart workers after upgrading. Neither CVE is a flaw in this package, so no package update is needed.
+
 ## [0.1.24] - 2026-09-23
 
 ### Added
