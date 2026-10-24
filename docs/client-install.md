@@ -5,6 +5,7 @@ Target audience: an AI agent (Laravel Boot, Claude Code, opencode, etc.) install
 ## Requirements
 
 - PHP 8.3+, Laravel 12/13, `composer` available.
+- Run a PHP patch release that includes the October 2026 RCE fixes (CVE-2026-109618, CVE-2026-109619): at least 8.5.12, 8.4.27, or 8.3.36, or a distro/LTS build with the fixes. Check the version your web server uses (FPM, mod_php, FrankenPHP), not just `php -v`.
 
 ## Install steps (in order)
 
