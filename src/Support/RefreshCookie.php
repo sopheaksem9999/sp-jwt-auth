@@ -91,7 +91,12 @@ final class RefreshCookie
         $response->headers->setCookie(self::make(self::name(), $pair->refreshToken, $pair->refreshTokenExpiresAt->getTimestamp(), self::path(), true));
 
         if ((bool) config('sp-jwt-auth.token_endpoints.csrf.enabled', true)) {
-            $response->headers->setCookie(self::make(self::csrfCookieName(), bin2hex(random_bytes(32)), $pair->refreshTokenExpiresAt->getTimestamp(), '/', false));
+            $csrf = bin2hex(random_bytes(32));
+            $response->headers->setCookie(self::make(self::csrfCookieName(), $csrf, $pair->refreshTokenExpiresAt->getTimestamp(), '/', false));
+            // Also readable from the response: a script on another site (or a host-only
+            // subdomain cookie) cannot read the API's cookie. Cross-site callers need this
+            // header in CORS `exposed_headers`; the client echoes it back on refresh/revoke.
+            $response->headers->set(self::csrfHeader(), $csrf);
         }
 
         return $response;

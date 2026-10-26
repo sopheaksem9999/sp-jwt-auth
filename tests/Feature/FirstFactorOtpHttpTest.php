@@ -103,6 +103,7 @@ final class FirstFactorOtpHttpTest extends TestCase
         $response->assertOk()->assertJsonStructure(['access_token', 'token_type', 'expires_in'])->assertJsonMissingPath('refresh_token');
         $response->assertCookie('sp_refresh_token');
         $response->assertCookie('sp_csrf');
+        $response->assertHeader('X-SP-CSRF', $response->getCookie('sp_csrf', false)->getValue());
     }
 
     public function test_request_endpoint_rate_limits_per_destination_with_retry_after(): void
