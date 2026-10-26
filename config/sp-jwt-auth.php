@@ -114,6 +114,20 @@ return [
         ],
     ],
 
+    // Optional device registry and device-scoped tokens (pre-login / guest sessions).
+    'devices' => [
+        'enabled' => filter_var(env('SP_JWT_DEVICES_ENABLED', false), FILTER_VALIDATE_BOOL),
+        'route_prefix' => env('SP_JWT_DEVICES_ROUTE_PREFIX', 'auth'),
+        'platforms' => ['web', 'ios', 'android', 'desktop'],
+        'default_scopes' => ['device'],
+        'rate_limit' => ['per_minute' => (int) env('SP_JWT_DEVICES_RATE_LIMIT', 10)],
+        'attestation' => [
+            'required' => filter_var(env('SP_JWT_DEVICES_ATTESTATION_REQUIRED', false), FILTER_VALIDATE_BOOL),
+            'on_authenticate' => false,
+        ],
+        'prune_inactive_days' => (int) env('SP_JWT_DEVICES_PRUNE_INACTIVE_DAYS', 180),
+    ],
+
     'email_verification' => [
         'enabled' => filter_var(env('SP_JWT_EMAIL_VERIFICATION_ENABLED', false), FILTER_VALIDATE_BOOL),
         'ttl_minutes' => (int) env('SP_JWT_EMAIL_VERIFICATION_TTL_MINUTES', 60),

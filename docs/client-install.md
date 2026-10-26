@@ -77,6 +77,7 @@ The trait provides `withAccessToken(JwtAccessToken)`, `token(): ?JwtAccessToken`
 - **API keys** — `AuthenticateApiKey` middleware; `sp-jwt-auth.api_keys.enabled`.
 - **OAuth server** — requires `league/oauth2-server`; `routes/oauth.php`, `AuthenticateOAuthToken` middleware.
 - **Socialite external identities** — requires `laravel/socialite`; `ExternalIdentityStore`.
+- **Devices** — `sp-jwt-auth.devices.enabled`; `DeviceService`, `sp.jwt.device` / `sp.jwt.any` middleware, `routes/devices.php`. See `docs/features/devices.md`.
 - **MFA / OTP / email verification / password reset** — toggles under `sp-jwt-auth.mfa.*`, `sp-jwt-auth.otp.*`, `sp-jwt-auth.email_verification.*`; brokers in `Sopheak\JwtAuth\Services`.
 
 ## Optional module: first-factor OTP

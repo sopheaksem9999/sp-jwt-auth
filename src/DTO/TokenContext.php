@@ -107,6 +107,11 @@ final readonly class TokenContext
         return new self($this->scopes, $this->claims, $type, $id, $this->audience, $this->deviceId, $this->deviceName, $this->sessionId, $this->metadata);
     }
 
+    public function device(string $id, ?string $name = null): self
+    {
+        return new self($this->scopes, $this->claims, $this->subjectType, $this->subjectId, $this->audience, $id, $name, $this->sessionId, $this->metadata);
+    }
+
     public function sessionId(string $sessionId): self
     {
         return new self($this->scopes, $this->claims, $this->subjectType, $this->subjectId, $this->audience, $this->deviceId, $this->deviceName, $sessionId, $this->metadata);
