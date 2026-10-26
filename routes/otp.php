@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Sopheak\JwtAuth\DTO\OtpDestination;
 use Sopheak\JwtAuth\Services\FirstFactorOtpBroker;
+use Sopheak\JwtAuth\Support\RefreshCookie;
 use Sopheak\JwtAuth\Support\ResponseEnvelope;
 
 Route::prefix((string) config('sp-jwt-auth.first_factor_otp.route_prefix', 'otp'))->group(function (): void {
@@ -127,6 +128,6 @@ Route::prefix((string) config('sp-jwt-auth.first_factor_otp.route_prefix', 'otp'
             );
         }
 
-        return response()->json(ResponseEnvelope::wrap($payload, $mode));
+        return RefreshCookie::attach(response()->json(ResponseEnvelope::wrap($payload, $mode)), $verification->pair);
     });
 });
