@@ -5,6 +5,10 @@ declare(strict_types=1);
 namespace Sopheak\JwtAuth\Support;
 
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Schema;
+use Sopheak\JwtAuth\Contracts\AttestationVerifier;
+use Sopheak\JwtAuth\Services\NullAttestationVerifier;
+use Throwable;
 
 final class SetupValidator
 {
@@ -37,6 +41,20 @@ final class SetupValidator
 
         if ((bool) config('sp-jwt-auth.keys.jwks_enabled', true) && ! Route::has('sp-jwt-auth.jwks')) {
             $warnings[] = 'JWKS is enabled, but the sp-jwt-auth.jwks route was not registered.';
+        }
+
+        if (DeviceConfig::enabled()) {
+            if (DeviceConfig::attestationRequired() && app(AttestationVerifier::class) instanceof NullAttestationVerifier) {
+                $errors[] = 'sp-jwt-auth.devices.attestation.required is true but no AttestationVerifier is bound; device registration will always fail.';
+            }
+
+            try {
+                if (! Schema::hasTable('sp_jwt_devices')) {
+                    $warnings[] = 'sp-jwt-auth.devices.enabled is true, but the sp_jwt_devices table does not exist; run the migrations.';
+                }
+            } catch (Throwable) {
+                // No database connection available while validating; skip the table check.
+            }
         }
 
         return [

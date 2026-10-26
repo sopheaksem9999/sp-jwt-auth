@@ -19,6 +19,15 @@ use Sopheak\JwtAuth\Console\JwksCommand;
 use Sopheak\JwtAuth\Console\KeysCommand;
 use Sopheak\JwtAuth\Console\McpCommand;
 use Sopheak\JwtAuth\Console\PruneCommand;
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Cache\RateLimiting\Limit;
+use Sopheak\JwtAuth\Support\DeviceConfig;
+use Sopheak\JwtAuth\Services\NullAttestationVerifier;
+use Sopheak\JwtAuth\Services\DeviceService;
+use Sopheak\JwtAuth\Http\Middleware\AuthenticateUserOrDevice;
+use Sopheak\JwtAuth\Http\Middleware\AuthenticateDevice;
+use Sopheak\JwtAuth\Contracts\AttestationVerifier;
+use Sopheak\JwtAuth\Console\PruneDevicesCommand;
 use Sopheak\JwtAuth\Console\SetupCommand;
 use Sopheak\JwtAuth\Console\ValidateCommand;
 use Sopheak\JwtAuth\Contracts\FirstFactorUserResolver;
@@ -64,6 +73,8 @@ final class CoreSpJwtAuthServiceProvider extends ServiceProvider
         $this->app->singleton(SigningKeyRepository::class, ConfigSigningKeyRepository::class);
         $this->app->singleton(HashKeyRepository::class);
         $this->app->singleton(SecretHasher::class);
+        $this->app->bindIf(AttestationVerifier::class, NullAttestationVerifier::class);
+        $this->app->singleton(DeviceService::class);
         $this->app->singleton(SchemaColumnCache::class);
         $this->app->singleton(JwksFormatter::class);
         $this->app->singleton(JwtTokenService::class);
@@ -136,6 +147,7 @@ final class CoreSpJwtAuthServiceProvider extends ServiceProvider
         }
 
         $this->registerFirstFactorOtpRoutes();
+        $this->registerDeviceModule($router);
 
         if ((bool) config('sp-jwt-auth.token_endpoints.enabled', false)) {
             Route::group([], __DIR__ . '/../routes/token.php');
@@ -149,11 +161,25 @@ final class CoreSpJwtAuthServiceProvider extends ServiceProvider
                 KeysCommand::class,
                 JwksCommand::class,
                 PruneCommand::class,
+                PruneDevicesCommand::class,
                 BoostCommand::class,
                 AgentCommand::class,
                 McpCommand::class,
             ]);
         }
+    }
+
+    /** Routes, middleware aliases and the rate limiter exist only while the module is enabled. */
+    private function registerDeviceModule(Router $router): void
+    {
+        if (! DeviceConfig::enabled()) {
+            return;
+        }
+
+        $router->aliasMiddleware('sp.jwt.device', AuthenticateDevice::class);
+        $router->aliasMiddleware('sp.jwt.any', AuthenticateUserOrDevice::class);
+        RateLimiter::for('sp-jwt-devices', static fn (Request $request): Limit => Limit::perMinute(DeviceConfig::perMinute())->by((string) $request->ip()));
+        Route::group([], __DIR__ . '/../routes/devices.php');
     }
 
     private function registerFirstFactorOtpRoutes(): void
