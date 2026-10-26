@@ -37,7 +37,7 @@ The client ID is on `$secret->client->id`. The secret is a 64-hex-char random st
 
 ## 3. Build the Authorization URL (Client)
 
-The client redirects the user to:
+The client redirects the user to your authorization endpoint. The package does **not** register `GET /oauth/authorize`: build it in your app with `validateAuthorizationRequest()`, `approveAuthorizationRequest()` and `denyAuthorizationRequest()` (which dispatches `OAuthAuthorizationDenied` and returns the `access_denied` redirect URL). Example URL:
 
 ```text
 GET /oauth/authorize?response_type=code&client_id={client_id}&redirect_uri={redirect_uri}&scope=invoices.read&state={random_state}&code_challenge={challenge}&code_challenge_method=S256
@@ -125,7 +125,7 @@ return $tokenData->toArray();
 //     "token_type": "Bearer",
 //     "expires_in": 3600,
 //     "refresh_token": "...",
-//     "scopes": ["invoices.read", "invoices.write"]
+//     "scope": "invoices.read invoices.write"
 // }
 ```
 

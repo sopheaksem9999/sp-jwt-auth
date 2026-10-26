@@ -31,6 +31,18 @@ final class GuardTest extends TestCase
             ->assertJson(['id' => $user->getAuthIdentifier(), 'can_client' => true]);
     }
 
+    public function test_guard_rejects_token_issued_to_a_different_model_class(): void
+    {
+        Route::middleware('auth:api')->get('/guard-model-mismatch', fn(): array => ['id' => auth('api')->id()]);
+
+        $user = $this->createUser();
+        $pair = app(JwtTokenService::class)->issueTokenPair($user, TokenContext::make());
+        $pair->accessTokenRecord->forceFill(['user_type' => 'App\\Models\\Admin'])->save();
+
+        $this->withToken($pair->accessToken)->getJson('/guard-model-mismatch')->assertUnauthorized();
+        self::assertNull($pair->accessTokenRecord->fresh()->last_used_at);
+    }
+
     public function test_guard_reuses_resolved_user_within_same_request(): void
     {
         $tokenTouchCount = 0;

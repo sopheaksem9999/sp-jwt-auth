@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Sopheak\JwtAuth\Services;
 
-use InvalidArgumentException;
+use Sopheak\JwtAuth\Exceptions\OAuthInvalidScopeException;
 use Sopheak\JwtAuth\Models\OAuthClient;
 
 final class OAuthScopeRepository
@@ -22,7 +22,7 @@ final class OAuthScopeRepository
     {
         foreach ($scopes as $scope) {
             if (! is_string($scope) || $scope === '' || ! $client->allowsScope($scope)) {
-                throw new InvalidArgumentException('OAuth scope is not allowed for this client.');
+                throw new OAuthInvalidScopeException('OAuth scope is not allowed for this client.');
             }
         }
 

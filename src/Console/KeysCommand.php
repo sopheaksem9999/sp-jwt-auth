@@ -106,15 +106,15 @@ CONFIG,
         }
 
         if ($this->option('retire')) {
-            $this->line(sprintf('Remove [%s] from active keys and add to SP_JWT_PREVIOUS_KIDS.', $kid));
+            $this->line(sprintf('Remove [%s] from active keys and add to SP_JWT_PREVIOUS_KIDS (or set its state to "previous" in keys.items).', $kid));
             $this->line('Tokens signed with a retired key remain valid until they expire.');
 
             return self::SUCCESS;
         }
 
         if ($this->option('revoke')) {
-            $tag = $this->option('compromised') ? 'SP_JWT_COMPROMISED_KIDS' : 'SP_JWT_REVOKED_KIDS';
-            $this->line(sprintf('Add [%s] to %s immediately.', $kid, $tag));
+            $this->line(sprintf('Add [%s] to SP_JWT_COMPROMISED_KIDS (or set its state to "compromised" in keys.items) immediately.', $kid));
+            $this->line('Tokens signed with it are rejected and the key is removed from the JWKS.');
 
             return self::SUCCESS;
         }

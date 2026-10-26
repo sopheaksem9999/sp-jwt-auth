@@ -52,7 +52,7 @@ final class JwtGuard implements Guard
 
         $user = $this->provider?->retrieveById($token->user_id);
 
-        if (! $user instanceof Authenticatable) {
+        if (! $user instanceof Authenticatable || $user::class !== $token->user_type) {
             return null;
         }
 

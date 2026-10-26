@@ -2,21 +2,15 @@
 
 declare(strict_types=1);
 
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Sopheak\JwtAuth\Services\OAuthServerService;
+use Sopheak\JwtAuth\Support\OAuthHttp;
 
 Route::prefix((string) config('sp-jwt-auth.oauth_server.route_prefix', 'oauth'))->group(function (): void {
-    Route::post('/token', static fn (OAuthServerService $oauth) => response()->json(
-        $oauth->issueTokenFromRequest(request())->toArray(),
-    ));
+    Route::post('/token', static fn (OAuthServerService $oauth, Request $request) => OAuthHttp::token($oauth, $request));
 
-    Route::post('/revoke', static function (OAuthServerService $oauth): \Illuminate\Http\JsonResponse {
-        $oauth->revokeToken((string) request('token'), is_string(request('token_type_hint')) ? request('token_type_hint') : null);
+    Route::post('/revoke', static fn (OAuthServerService $oauth, Request $request) => OAuthHttp::revoke($oauth, $request));
 
-        return response()->json([], 200);
-    });
-
-    Route::post('/introspect', static fn (OAuthServerService $oauth) => response()->json(
-        (array) $oauth->introspect((string) request('token')),
-    ));
+    Route::post('/introspect', static fn (OAuthServerService $oauth, Request $request) => OAuthHttp::introspect($oauth, $request));
 });

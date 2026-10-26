@@ -54,7 +54,7 @@ curl -X POST https://api.example.com/oauth/token \
     "access_token": "spoat_abc123...",
     "token_type": "Bearer",
     "expires_in": 3600,
-    "scopes": ["invoices.read", "reports.generate"]
+    "scope": "invoices.read reports.generate"
 }
 ```
 
@@ -64,7 +64,7 @@ The server verifies the client secret against the HMAC hash, validates the reque
 
 ```bash
 curl -X GET https://api.example.com/partner/invoices \
-  -H "Authorization: Bearer spoam_abc123..."
+  -H "Authorization: Bearer spoat_abc123..."
 ```
 
 ## 4. Protect Routes

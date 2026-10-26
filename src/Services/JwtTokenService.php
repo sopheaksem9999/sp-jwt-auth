@@ -67,6 +67,8 @@ final readonly class JwtTokenService
             'session_id' => $sessionId,
             'device_id' => $context->deviceId,
             'device_name' => $context->deviceName,
+            'ip_address' => $this->requestIp($context),
+            'user_agent' => $this->requestUserAgent($context),
             'subject_type' => $subject?->type,
             'subject_id' => $subject?->id,
             'scopes' => $context->scopes,
@@ -139,6 +141,7 @@ final readonly class JwtTokenService
             $header = JWT::jsonDecode(JWT::urlsafeB64Decode($parts[0]));
             $kid = (string) ($header->kid ?? '');
             $key = $this->keys->forVerification($kid);
+            JWT::$leeway = max(0, (int) config('sp-jwt-auth.clock_skew_seconds', 0));
             $decoded = JWT::decode($jwt, new Key($key->publicKey, $key->algorithm));
             $issuer = (string) config('sp-jwt-auth.issuer');
             $audience = config('sp-jwt-auth.audience');
@@ -192,6 +195,8 @@ final readonly class JwtTokenService
                 subjectType: $oldAccess?->subject_type,
                 subjectId: $oldAccess?->subject_id,
                 audience: $oldAccess?->audience,
+                deviceId: $oldAccess?->device_id,
+                deviceName: $oldAccess?->device_name,
                 sessionId: $row->session_id,
             );
 
@@ -283,17 +288,31 @@ final readonly class JwtTokenService
             ->update(['revoked_at' => now()]);
     }
 
-    /** @return Collection<int, JwtAccessToken> */
+    /**
+     * One entry per session whose refresh token is still usable, represented by
+     * the session's newest access-token row (so idle sessions are listed too).
+     *
+     * @return Collection<int, JwtAccessToken>
+     */
     public function activeSessionsForUser(Authenticatable $user): Collection
     {
-        return JwtAccessToken::query()
+        $refreshTokens = JwtRefreshToken::query()
             ->where('user_type', $user::class)
             ->where('user_id', (string) $user->getAuthIdentifier())
             ->whereNull('revoked_at')
             ->where('expires_at', '>', now())
-            ->orderByDesc('last_used_at')
-            ->orderByDesc('created_at')
-            ->get();
+            ->get()
+            ->groupBy('session_id')
+            ->map(static fn (Collection $group): JwtRefreshToken => $group->sortByDesc('created_at')->first());
+
+        return JwtAccessToken::query()
+            ->whereIn('id', $refreshTokens->pluck('access_token_id')->all())
+            ->get()
+            ->sortByDesc(static fn (JwtAccessToken $token): array => [
+                $token->last_used_at?->getTimestamp() ?? 0,
+                $token->created_at?->getTimestamp() ?? 0,
+            ])
+            ->values();
     }
 
     /** @return array{0: string, 1: string} */
@@ -334,5 +353,19 @@ final readonly class JwtTokenService
         }
 
         return $user;
+    }
+
+    private function requestIp(TokenContext $context): ?string
+    {
+        $ip = $context->metadata['ip_address'] ?? (app()->bound('request') ? request()->ip() : null);
+
+        return is_string($ip) && $ip !== '' ? mb_substr($ip, 0, 45) : null;
+    }
+
+    private function requestUserAgent(TokenContext $context): ?string
+    {
+        $agent = $context->metadata['user_agent'] ?? (app()->bound('request') ? request()->userAgent() : null);
+
+        return is_string($agent) && $agent !== '' ? mb_substr($agent, 0, 1000) : null;
     }
 }

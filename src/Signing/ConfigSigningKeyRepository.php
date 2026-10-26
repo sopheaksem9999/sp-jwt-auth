@@ -44,16 +44,14 @@ final class ConfigSigningKeyRepository implements SigningKeyRepository
         $items = config('sp-jwt-auth.keys.items', []);
         $keys = [];
 
-        foreach (array_keys(is_array($items) ? $items : []) as $kid) {
-            $key = $this->make((string) $kid);
+        foreach (is_array($items) ? $items : [] as $kid => $item) {
+            $state = $this->stateFor((string) $kid, is_array($item) ? $item : []);
 
-            if ($activeOnly && $key->state !== 'active') {
+            if (! in_array($state, ['active', 'previous'], true) || ($activeOnly && $state !== 'active')) {
                 continue;
             }
 
-            if (in_array($key->state, ['active', 'previous'], true)) {
-                $keys[] = $key;
-            }
+            $keys[] = $this->make((string) $kid);
         }
 
         return $keys;
@@ -67,7 +65,7 @@ final class ConfigSigningKeyRepository implements SigningKeyRepository
             throw new RuntimeException(sprintf('JWT key [%s] is not configured.', $kid));
         }
 
-        $state = (string) ($item['state'] ?? 'active');
+        $state = $this->stateFor($kid, $item);
 
         if ($state === 'compromised') {
             throw new RuntimeException(sprintf('JWT key [%s] is compromised.', $kid));
@@ -88,5 +86,26 @@ final class ConfigSigningKeyRepository implements SigningKeyRepository
             $publicKey,
             $state,
         );
+    }
+
+    /**
+     * Effective key state: the env lists (`compromised_kids`, `previous_kids`)
+     * override the per-key `state` so operators can react without editing `items`.
+     *
+     * @param array<string, mixed> $item
+     */
+    private function stateFor(string $kid, array $item): string
+    {
+        if (in_array($kid, (array) config('sp-jwt-auth.keys.compromised_kids', []), true)) {
+            return 'compromised';
+        }
+
+        $state = (string) ($item['state'] ?? 'active');
+
+        if ($state === 'active' && in_array($kid, (array) config('sp-jwt-auth.keys.previous_kids', []), true)) {
+            return 'previous';
+        }
+
+        return $state;
     }
 }

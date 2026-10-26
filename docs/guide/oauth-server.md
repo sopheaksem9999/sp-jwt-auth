@@ -106,3 +106,11 @@ app(OAuthServerService::class)->revokeToken($token);
 
 $payload = app(OAuthServerService::class)->introspect($token);
 ```
+
+## Endpoint behaviour
+
+- `POST /oauth/token`, `/oauth/revoke` and `/oauth/introspect` return RFC 6749 §5.2 errors (`{"error": "invalid_client", "error_description": "…"}`) with the right status: `401 invalid_client`, `400 unsupported_grant_type`, `400 invalid_scope`, `400 invalid_grant`.
+- `/oauth/revoke` and `/oauth/introspect` require **client authentication** (HTTP Basic or `client_id` / `client_secret` in the body). A client only revokes or introspects its **own** tokens; any other or malformed token is a no-op on revoke and `{"active": false}` on introspect.
+- Introspection returns RFC 7662 members: `active`, `scope` (space-separated), `client_id`, `sub`, `token_type`, `exp` (epoch seconds), `jti`.
+- Set `SP_JWT_OAUTH_LEGACY_RESPONSES=true` to keep the pre-0.1.25 response shapes while you migrate clients (client authentication stays required).
+- Resource routes behind `sp.oauth` answer `401` for a missing, malformed or inactive bearer token.
