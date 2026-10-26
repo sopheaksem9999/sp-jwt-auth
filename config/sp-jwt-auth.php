@@ -16,7 +16,6 @@ return [
     'refresh_ttl_days' => (int) env('SP_JWT_REFRESH_TTL_DAYS', 60),
     'clock_skew_seconds' => (int) env('SP_JWT_CLOCK_SKEW_SECONDS', 60),
 
-    'rotate_refresh_tokens' => true,
     'reuse_detection' => env('SP_JWT_REUSE_DETECTION', 'revoke_session'),
 
     'keys' => [
@@ -25,7 +24,6 @@ return [
         'compromised_kids' => array_values(array_filter(explode(',', (string) env('SP_JWT_COMPROMISED_KIDS', '')))),
         'jwks_enabled' => filter_var(env('SP_JWT_JWKS_ENABLED', true), FILTER_VALIDATE_BOOL),
         'jwks_route' => env('SP_JWT_JWKS_ROUTE', '/.well-known/sp-jwt-auth/jwks.json'),
-        'rotation_grace_days' => (int) env('SP_JWT_KEY_ROTATION_GRACE_DAYS', 30),
         'items' => array_filter([
             env('SP_JWT_ACTIVE_KID', env('SP_JWT_KEY_ID')) => [
                 'state' => 'active',
@@ -130,12 +128,13 @@ return [
     'oauth_server' => [
         'enabled' => filter_var(env('SP_JWT_OAUTH_SERVER_ENABLED', false), FILTER_VALIDATE_BOOL),
         'route_prefix' => env('SP_JWT_OAUTH_ROUTE_PREFIX', 'oauth'),
-        'access_token_format' => env('SP_JWT_OAUTH_ACCESS_TOKEN_FORMAT', 'opaque'),
         'access_token_ttl_minutes' => (int) env('SP_JWT_OAUTH_ACCESS_TOKEN_TTL_MINUTES', 60),
         'refresh_token_ttl_days' => (int) env('SP_JWT_OAUTH_REFRESH_TOKEN_TTL_DAYS', 30),
         'auth_code_ttl_minutes' => (int) env('SP_JWT_OAUTH_AUTH_CODE_TTL_MINUTES', 10),
         'require_pkce_for_public_clients' => filter_var(env('SP_JWT_OAUTH_REQUIRE_PKCE_FOR_PUBLIC_CLIENTS', true), FILTER_VALIDATE_BOOL),
         'issuer' => env('SP_JWT_OAUTH_ISSUER', env('SP_JWT_ISSUER', env('APP_URL'))),
+        // true keeps the pre-0.1.25 response shapes (framework error bodies, camelCase introspection).
+        'legacy_responses' => filter_var(env('SP_JWT_OAUTH_LEGACY_RESPONSES', false), FILTER_VALIDATE_BOOL),
         'scopes' => [],
     ],
 

@@ -32,7 +32,7 @@ SP_JWT_TOKEN_ENDPOINTS_ENABLED=true
 Request:
 
 ```json
-{"refresh_token": "r1.eyJhbGciOiJIUzI1NiJ9.secret"}
+{"refresh_token": "0f8c3b52-9a41-4f6e-8d27-1c5e7a9b3d04.9b1f…64 hex characters…"}
 ```
 
 Response `200`:

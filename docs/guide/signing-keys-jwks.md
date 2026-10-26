@@ -21,7 +21,7 @@ Set the active key id:
 SP_JWT_ACTIVE_KID=2026-06-primary
 ```
 
-The active key signs new JWTs. Previous keys can still verify old JWTs during a rotation grace period.
+The active key signs new JWTs. Previous keys (state `previous`, or listed in `SP_JWT_PREVIOUS_KIDS`) can still verify old JWTs until those tokens expire; remove a previous key once the longest-lived token signed by it has expired. Keys in state `compromised` (or listed in `SP_JWT_COMPROMISED_KIDS`) are rejected immediately and left out of the JWKS.
 
 ## JWKS
 

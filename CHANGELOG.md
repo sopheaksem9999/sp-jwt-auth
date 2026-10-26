@@ -6,6 +6,35 @@ All notable changes to `sopheak/sp-jwt-auth` will be documented in this file.
 
 ### Security
 - Upgrade the PHP runtime on every server that handles web requests to 8.5.12, 8.4.27, or 8.3.36 (the versions this package supports), or install your distro's or LTS vendor's patched build. These releases fix two critical remote code execution vulnerabilities in the PHP engine (CVE-2026-109618, CVE-2026-109619). PHP-FPM, Apache with mod_php, php-cgi, FrankenPHP, and LiteSpeed are affected; restart workers after upgrading. Neither CVE is a flaw in this package, so no package update is needed.
+- `JwtGuard` now rejects an access token whose `user_type` differs from the model class returned by the guard's user provider. Previously a token issued to one model (e.g. `Admin` #5) could authenticate as another model's record with the same ID (`User` #5).
+- `POST /oauth/revoke` and `/oauth/introspect` now require client authentication, and a client can only revoke or introspect its own tokens.
+- `external_identities.encrypt_provider_tokens` (default `true`) is now honoured: provider tokens are encrypted at rest with Laravel's `Crypt`. Rows written earlier stay readable and are encrypted on their next write.
+- API key `allowed_ips` now fails closed when the request IP is unknown.
+
+### Fixed
+- `sp-jwt-auth:prune` no longer deletes refresh tokens that are still valid. Pruning an old access token cascade-deleted its refresh token, which could log out a user who had been idle for more than `--expired-days`. Access tokens with a live refresh token are now kept.
+- `sp-jwt-auth:prune --dry-run` no longer counts rows that are both expired and revoked twice.
+- OAuth `expires_in` was always `0` under Carbon 3; it now reports the real remaining seconds.
+- `JwtTokenService::activeSessionsForUser()` lists a session while its refresh token is valid (one entry per session) instead of hiding sessions idle longer than the access TTL.
+- Refresh rotation keeps `device_id` / `device_name`, so `revokeDevice()` still finds refreshed sessions.
+- `ExternalIdentityStore::store($identity)` without a user no longer unlinks an existing account.
+- Marking a key `compromised` no longer breaks the JWKS endpoint; the key is left out and tokens signed with it are rejected.
+- API key `allowed_ips` accepts CIDR ranges and IPv6 (`Symfony\IpUtils`).
+- OAuth client errors (unknown grant, disallowed scope, malformed token) no longer return HTTP 500 (see Changed).
+- `POST /auth/token/revoke` uses the configured `sp-jwt-auth.guard` instead of a hard-coded `api` and returns `{}` instead of `[]`.
+- `OAuthAuthorizationDenied` is now dispatched, by the new `OAuthServerService::denyAuthorizationRequest()`.
+- `access_tokens.ip_address` / `user_agent` are now recorded on issue and rotation (from the current request, or `TokenContext` metadata keys `ip_address` / `user_agent`).
+
+### Changed
+- OAuth routes return RFC 6749 error bodies and RFC 7662 introspection members. Set `SP_JWT_OAUTH_LEGACY_RESPONSES=true` to keep the old shapes while migrating clients.
+- Config keys that were never read are now implemented or removed: `clock_skew_seconds` is JWT leeway; `keys.previous_kids` / `keys.compromised_kids` set key state; `api_keys.max_ttl_days` / `allow_never_expires` bound key lifetimes (keys without an expiry now get `max_ttl_days`; an explicit longer expiry throws `InvalidArgumentException`). Removed: `rotate_refresh_tokens`, `keys.rotation_grace_days`, `oauth_server.access_token_format`. The module `enabled` flags remain informational (see the configuration guide).
+- `sp-jwt-auth:prune` deletes in batches (`--chunk`, default 1000).
+- Documentation corrected where it disagreed with the code (OAuth responses, token prefix, refresh token format, env var names).
+
+### Added
+- `OAuthServerService::authenticateClient()`, `denyAuthorizationRequest()`, and an optional `$client` argument on `revokeToken()` / `introspect()`.
+- `ExternalIdentityStore::unlink()`.
+- Typed OAuth exceptions implementing `Contracts\OAuthErrorException`.
 
 ## [0.1.24] - 2026-09-23
 

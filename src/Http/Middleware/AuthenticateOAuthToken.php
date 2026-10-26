@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Sopheak\JwtAuth\Http\Middleware;
 
 use Closure;
+use Illuminate\Auth\AuthenticationException;
 use Illuminate\Http\Request;
+use Sopheak\JwtAuth\Exceptions\OAuthMalformedTokenException;
 use Sopheak\JwtAuth\Services\OAuthServerService;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -23,7 +25,13 @@ final readonly class AuthenticateOAuthToken
             abort(401);
         }
 
-        $request->attributes->set('sp_oauth_principal', $this->oauth->validateResourceToken($bearer));
+        try {
+            $principal = $this->oauth->validateResourceToken($bearer);
+        } catch (AuthenticationException|OAuthMalformedTokenException) {
+            abort(401);
+        }
+
+        $request->attributes->set('sp_oauth_principal', $principal);
 
         return $next($request);
     }

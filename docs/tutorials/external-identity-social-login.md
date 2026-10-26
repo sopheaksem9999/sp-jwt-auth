@@ -152,13 +152,13 @@ Route::get('/auth/{provider}/callback', function (string $provider, Request $req
 If your app needs the provider access/refresh tokens (e.g., to call Google APIs on behalf of the user):
 
 ```env
-SP_JWT_EXTERNAL_IDENTITIES_STORE_PROVIDER_TOKENS=true
+SP_JWT_EXTERNAL_STORE_PROVIDER_TOKENS=true
 ```
 
-Provider tokens are stored in the `provider_tokens` JSON column. Enable encryption for sensitive tokens:
+Provider tokens are stored in the `provider_tokens` JSON column. Provider tokens are encrypted at rest by default (Laravel `Crypt`, keyed by `APP_KEY`). Set this to `false` only if you need plain JSON:
 
 ```env
-SP_JWT_EXTERNAL_IDENTITIES_ENCRYPT_PROVIDER_TOKENS=true
+SP_JWT_EXTERNAL_ENCRYPT_PROVIDER_TOKENS=true
 ```
 
 ## Events

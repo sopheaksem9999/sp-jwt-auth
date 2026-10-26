@@ -8,6 +8,7 @@ use Carbon\CarbonInterface;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Str;
+use InvalidArgumentException;
 use Sopheak\JwtAuth\DTO\ApiKeyContext;
 use Sopheak\JwtAuth\DTO\ApiKeyPlaintextResult;
 use Sopheak\JwtAuth\DTO\ApiKeyPrincipal;
@@ -17,6 +18,7 @@ use Sopheak\JwtAuth\Events\ApiKeyRotated;
 use Sopheak\JwtAuth\Events\ApiKeyUsed;
 use Sopheak\JwtAuth\Models\ApiKey;
 use Sopheak\JwtAuth\Security\SecretHasher;
+use Symfony\Component\HttpFoundation\IpUtils;
 
 final readonly class ApiKeyService
 {
@@ -32,11 +34,7 @@ final readonly class ApiKeyService
         $secret = bin2hex(random_bytes((int) config('sp-jwt-auth.api_keys.secret_bytes', 32)));
         $hash = $this->hasher->hash($secret);
         $plaintext = sprintf('%s_%s_%s.%s', $prefix, $environment, $publicId, $secret);
-        $expiresAt = $context->expiresAt;
-
-        if (!$expiresAt instanceof CarbonInterface && config('sp-jwt-auth.api_keys.default_ttl_days') !== null) {
-            $expiresAt = now()->addDays((int) config('sp-jwt-auth.api_keys.default_ttl_days'));
-        }
+        $expiresAt = $this->resolveExpiry($context->expiresAt);
 
         $apiKey = ApiKey::query()->create([
             'id' => (string) Str::uuid(),
@@ -79,7 +77,7 @@ final readonly class ApiKeyService
             throw new AuthenticationException('API key is invalid.');
         }
 
-        if ($apiKey->allowed_ips !== null && $ipAddress !== null && ! in_array($ipAddress, $apiKey->allowed_ips, true)) {
+        if ($apiKey->allowed_ips !== null && ($ipAddress === null || ! IpUtils::checkIp($ipAddress, array_map(strval(...), $apiKey->allowed_ips)))) {
             throw new AuthenticationException('API key is invalid.');
         }
 
@@ -138,5 +136,33 @@ final readonly class ApiKeyService
         }
 
         return [$parts[0], $parts[1], $parts[2], $secret];
+    }
+
+    /**
+     * Applies api_keys.default_ttl_days, max_ttl_days and allow_never_expires.
+     * `allowed_ips` entries may be single IPs or CIDR ranges (IPv4 and IPv6);
+     * an empty list rejects every request, and a missing request IP is rejected.
+     */
+    private function resolveExpiry(?CarbonInterface $requested): ?CarbonInterface
+    {
+        $default = config('sp-jwt-auth.api_keys.default_ttl_days');
+        $max = (int) config('sp-jwt-auth.api_keys.max_ttl_days', 0);
+        $allowNever = (bool) config('sp-jwt-auth.api_keys.allow_never_expires', false);
+
+        if (! $requested instanceof CarbonInterface) {
+            if ($default !== null && $default !== '') {
+                $requested = now()->addDays((int) $default);
+            } elseif (! $allowNever && $max > 0) {
+                $requested = now()->addDays($max);
+            } else {
+                return null;
+            }
+        }
+
+        if ($max > 0 && $requested->greaterThan(now()->addDays($max)->addMinute())) {
+            throw new InvalidArgumentException(sprintf('API key lifetime exceeds api_keys.max_ttl_days (%d).', $max));
+        }
+
+        return $requested;
     }
 }

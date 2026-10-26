@@ -11,7 +11,6 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
-use RuntimeException;
 use Sopheak\JwtAuth\DTO\OAuthAuthorizationCode as OAuthAuthorizationCodeDto;
 use Sopheak\JwtAuth\DTO\OAuthAuthorizationRequest;
 use Sopheak\JwtAuth\DTO\OAuthConsentContext;
@@ -19,6 +18,11 @@ use Sopheak\JwtAuth\DTO\OAuthIntrospectionPayload;
 use Sopheak\JwtAuth\DTO\OAuthPrincipal;
 use Sopheak\JwtAuth\DTO\OAuthTokenResponse;
 use Sopheak\JwtAuth\Events\OAuthAuthorizationApproved;
+use Sopheak\JwtAuth\Events\OAuthAuthorizationDenied;
+use Sopheak\JwtAuth\Exceptions\OAuthInvalidClientException;
+use Sopheak\JwtAuth\Exceptions\OAuthInvalidGrantException;
+use Sopheak\JwtAuth\Exceptions\OAuthMalformedTokenException;
+use Sopheak\JwtAuth\Exceptions\OAuthUnsupportedGrantTypeException;
 use Sopheak\JwtAuth\Events\OAuthTokenIssued;
 use Sopheak\JwtAuth\Events\OAuthTokenRevoked;
 use Sopheak\JwtAuth\Models\OAuthAccessToken;
@@ -110,32 +114,80 @@ final readonly class OAuthServerService
         return new OAuthAuthorizationCodeDto($code, $request->redirectUri, $expiresAt, $record);
     }
 
+    /**
+     * Record that the user denied (or the host rejected) an authorization
+     * request and build the RFC 6749 §4.1.2.1 `access_denied` redirect URL.
+     */
+    public function denyAuthorizationRequest(OAuthAuthorizationRequest $request, ?Authenticatable $user = null): string
+    {
+        Event::dispatch(new OAuthAuthorizationDenied($request, $user));
+
+        $query = array_filter([
+            'error' => 'access_denied',
+            'error_description' => 'The resource owner denied the request.',
+            'state' => $request->state,
+        ], static fn (?string $value): bool => $value !== null);
+
+        return $request->redirectUri . (str_contains($request->redirectUri, '?') ? '&' : '?') . http_build_query($query);
+    }
+
     public function issueTokenFromRequest(Request $request): OAuthTokenResponse
     {
         return match ((string) $request->request->get('grant_type')) {
             'authorization_code' => $this->issueAuthorizationCodeToken($request),
             'client_credentials' => $this->issueClientCredentialsToken($request),
             'refresh_token' => $this->issueRefreshToken($request),
-            default => throw new InvalidArgumentException('OAuth grant type is unsupported.'),
+            default => throw new OAuthUnsupportedGrantTypeException('OAuth grant type is unsupported.'),
         };
     }
 
-    public function revokeToken(string $token, ?string $hint = null): void
+    /**
+     * Authenticate the calling client (HTTP Basic or request body) without
+     * checking a grant type. Used by the revoke and introspect endpoints.
+     */
+    public function authenticateClient(Request $request): OAuthClient
     {
+        [$clientId, $clientSecret] = $this->clientCredentials($request);
+        $client = $this->clients->findActiveClient($clientId);
+
+        if (! $client instanceof OAuthClient || ! $this->clients->validateSecret($client, $clientSecret)) {
+            throw new OAuthInvalidClientException('OAuth client is invalid.');
+        }
+
+        return $client;
+    }
+
+    /**
+     * When $client is given only that client's tokens are affected; tokens of
+     * other clients are left alone (RFC 7009 §2.1).
+     */
+    public function revokeToken(string $token, ?string $hint = null, ?OAuthClient $client = null): void
+    {
+        $publicId = $this->publicId($token);
+        $scoped = static fn ($query) => $client instanceof OAuthClient ? $query->where('client_id', $client->id) : $query;
+
         if ($hint === 'refresh_token') {
-            OAuthRefreshToken::query()->where('public_id', $this->publicId($token))->update(['revoked_at' => now()]);
+            $scoped(OAuthRefreshToken::query()->where('public_id', $publicId))->update(['revoked_at' => now()]);
         } else {
-            OAuthAccessToken::query()->where('public_id', $this->publicId($token))->update(['revoked_at' => now()]);
-            OAuthRefreshToken::query()->where('public_id', $this->publicId($token))->update(['revoked_at' => now()]);
+            $scoped(OAuthAccessToken::query()->where('public_id', $publicId))->update(['revoked_at' => now()]);
+            $scoped(OAuthRefreshToken::query()->where('public_id', $publicId))->update(['revoked_at' => now()]);
         }
 
         Event::dispatch(new OAuthTokenRevoked($token));
     }
 
-    public function introspect(string $token): OAuthIntrospectionPayload
+    /**
+     * A malformed, unknown or (when $client is given) foreign token is reported
+     * as inactive rather than raising (RFC 7662 §2.2).
+     */
+    public function introspect(string $token, ?OAuthClient $client = null): OAuthIntrospectionPayload
     {
         try {
             $principal = $this->validateResourceToken($token);
+
+            if ($client instanceof OAuthClient && $principal->clientId !== $client->id) {
+                return new OAuthIntrospectionPayload(active: false);
+            }
 
             return new OAuthIntrospectionPayload(
                 active: true,
@@ -148,7 +200,7 @@ final readonly class OAuthServerService
                 tokenId: $principal->tokenId,
                 expiresAt: $principal->expiresAt,
             );
-        } catch (AuthenticationException) {
+        } catch (AuthenticationException|OAuthMalformedTokenException) {
             return new OAuthIntrospectionPayload(active: false);
         }
     }
@@ -203,7 +255,7 @@ final readonly class OAuthServerService
                 }
 
                 if ($row->expires_at->isPast() || $row->redirect_uri !== $redirectUri || ! $this->validPkce($row, (string) $request->request->get('code_verifier'))) {
-                    throw new AuthenticationException('OAuth authorization code is invalid.');
+                    throw new OAuthInvalidGrantException('OAuth authorization code is invalid.');
                 }
 
                 $row->forceFill(['revoked_at' => now()])->save();
@@ -211,7 +263,7 @@ final readonly class OAuthServerService
                 return $this->issueTokenPair($client, 'authorization_code', $row->scopes ?? [], $row->claims ?? [], $row->user_type, $row->user_id === null ? null : (string) $row->user_id);
             }
 
-            throw new AuthenticationException('OAuth authorization code is invalid.');
+            throw new OAuthInvalidGrantException('OAuth authorization code is invalid.');
         });
     }
 
@@ -239,7 +291,7 @@ final readonly class OAuthServerService
                 || $row->expires_at->isPast()
                 || ! $this->hasher->verify($secret, $row->secret_hash, $row->hash_key_id)
             ) {
-                throw new AuthenticationException('OAuth refresh token is invalid.');
+                throw new OAuthInvalidGrantException('OAuth refresh token is invalid.');
             }
 
             $row->forceFill(['revoked_at' => now()])->save();
@@ -254,7 +306,7 @@ final readonly class OAuthServerService
         $client = $this->clients->findActiveClient($clientId);
 
         if (! $client instanceof OAuthClient || ! $client->allowsGrant($grant) || ! $this->clients->validateSecret($client, $clientSecret)) {
-            throw new AuthenticationException('OAuth client is invalid.');
+            throw new OAuthInvalidClientException('OAuth client is invalid.');
         }
 
         return $client;
@@ -274,7 +326,7 @@ final readonly class OAuthServerService
         }
 
         if ($request->query->has('client_secret')) {
-            throw new AuthenticationException('OAuth client secret is not accepted in the query string.');
+            throw new OAuthInvalidClientException('OAuth client secret is not accepted in the query string.');
         }
 
         return [$clientId, is_string($clientSecret) ? $clientSecret : null];
@@ -292,7 +344,7 @@ final readonly class OAuthServerService
         return new OAuthTokenResponse(
             accessToken: $access['plaintext'],
             tokenType: 'Bearer',
-            expiresIn: max(0, $access['record']->expires_at->diffInSeconds(now())),
+            expiresIn: max(0, (int) now()->diffInSeconds($access['record']->expires_at, false)),
             refreshToken: $refresh,
             scopes: $scopes,
         );
@@ -305,7 +357,7 @@ final readonly class OAuthServerService
         return new OAuthTokenResponse(
             accessToken: $access['plaintext'],
             tokenType: 'Bearer',
-            expiresIn: max(0, $access['record']->expires_at->diffInSeconds(now())),
+            expiresIn: max(0, (int) now()->diffInSeconds($access['record']->expires_at, false)),
             scopes: $scopes,
         );
     }
@@ -392,7 +444,7 @@ final readonly class OAuthServerService
         $parts = explode('.', $token, 2);
 
         if (count($parts) !== 2 || $parts[0] === '' || $parts[1] === '') {
-            throw new RuntimeException('OAuth token is malformed.');
+            throw new OAuthMalformedTokenException('OAuth token is malformed.');
         }
 
         return [$parts[0], $parts[1]];

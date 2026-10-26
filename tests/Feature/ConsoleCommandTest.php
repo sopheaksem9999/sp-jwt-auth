@@ -69,11 +69,11 @@ final class ConsoleCommandTest extends TestCase
             ->assertExitCode(0);
 
         $this->artisan('sp-jwt-auth:keys', ['--revoke' => true, '--kid' => 'k2'])
-            ->expectsOutputToContain('Add [k2] to SP_JWT_REVOKED_KIDS immediately.')
+            ->expectsOutputToContain('Add [k2] to SP_JWT_COMPROMISED_KIDS')
             ->assertExitCode(0);
 
         $this->artisan('sp-jwt-auth:keys', ['--revoke' => true, '--compromised' => true, '--kid' => 'k3'])
-            ->expectsOutputToContain('Add [k3] to SP_JWT_COMPROMISED_KIDS immediately.')
+            ->expectsOutputToContain('Add [k3] to SP_JWT_COMPROMISED_KIDS')
             ->assertExitCode(0);
     }
 

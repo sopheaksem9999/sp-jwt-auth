@@ -25,7 +25,7 @@ Route::prefix((string) config('sp-jwt-auth.token_endpoints.route_prefix', 'auth'
     });
 
     Route::post('/token/revoke', static function () {
-        $user = auth()->user();
+        $user = auth((string) config('sp-jwt-auth.guard', 'api'))->user();
         $token = $user?->token();
 
         if ($token === null || $token->session_id === null) {
@@ -34,6 +34,8 @@ Route::prefix((string) config('sp-jwt-auth.token_endpoints.route_prefix', 'auth'
 
         app(JwtTokenService::class)->revokeSession($token->session_id);
 
-        return response()->json(ResponseEnvelope::wrap([], (string) config('sp-jwt-auth.token_endpoints.response_envelope', 'raw')));
-    })->middleware('auth:api');
+        $body = ResponseEnvelope::wrap([], (string) config('sp-jwt-auth.token_endpoints.response_envelope', 'raw'));
+
+        return response()->json($body === [] ? new stdClass() : $body);
+    })->middleware('auth:' . config('sp-jwt-auth.guard', 'api'));
 });

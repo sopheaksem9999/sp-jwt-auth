@@ -20,4 +20,26 @@ final readonly class OAuthIntrospectionPayload
         public ?CarbonInterface $expiresAt = null,
     ) {
     }
+
+    /**
+     * RFC 7662 §2.2 response members.
+     *
+     * @return array<string, mixed>
+     */
+    public function toRfcArray(): array
+    {
+        if (! $this->active) {
+            return ['active' => false];
+        }
+
+        return array_filter([
+            'active' => true,
+            'scope' => implode(' ', $this->scopes),
+            'client_id' => $this->clientId,
+            'sub' => $this->userId,
+            'token_type' => 'Bearer',
+            'exp' => $this->expiresAt?->getTimestamp(),
+            'jti' => $this->tokenId,
+        ], static fn (mixed $value): bool => $value !== null);
+    }
 }
