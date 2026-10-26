@@ -94,7 +94,7 @@ final readonly class JwtTokenService
             'expires_at' => $refreshExpiresAt,
         ]);
 
-        $payload = array_merge([
+        $payload = [
             'iss' => $issuer,
             'sub' => (string) $user->getAuthIdentifier(),
             'jti' => $accessId,
@@ -103,7 +103,8 @@ final readonly class JwtTokenService
             'exp' => $accessExpiresAt->getTimestamp(),
             'scopes' => $context->scopes,
             'sid' => $sessionId,
-        ], $context->claims);
+            ...$context->claims,
+        ];
 
         if ($audience !== null && $audience !== '') {
             $payload['aud'] = $audience;
@@ -200,16 +201,16 @@ final readonly class JwtTokenService
                 sessionId: $row->session_id,
             );
 
-            $row->forceFill(['revoked_at' => now()])->save();
+            $now = now();
 
             if ($oldAccess instanceof JwtAccessToken) {
-                $oldAccess->forceFill(['revoked_at' => now()])->save();
+                $oldAccess->forceFill(['revoked_at' => $now])->save();
             }
 
             $user = $this->resolveRefreshUser($row);
             $pair = $this->issueTokenPair($user, $context);
 
-            $row->forceFill(['replaced_by_id' => $pair->refreshTokenRecord->id])->save();
+            $row->forceFill(['revoked_at' => $now, 'replaced_by_id' => $pair->refreshTokenRecord->id])->save();
 
             Event::dispatch(new TokenRefreshed($row, $pair));
 

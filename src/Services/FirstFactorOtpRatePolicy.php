@@ -38,7 +38,7 @@ final readonly class FirstFactorOtpRatePolicy
             }
         }
 
-        return $this->withLock(function (RateLimiter $limiter) use ($limits): array {
+        return $this->withLocks(array_column($limits, 'key'), function (RateLimiter $limiter) use ($limits): array {
             foreach ($limits as $limit) {
                 if ($limiter->tooManyAttempts($limit['key'], $limit['max'])) {
                     throw new TooManyRequestsHttpException(max(1, $limiter->availableIn($limit['key'])), 'Too many requests.');
@@ -56,7 +56,7 @@ final readonly class FirstFactorOtpRatePolicy
     /** @param array<int, array{key: string, decay: int}> $reservation */
     public function releaseSend(array $reservation): void
     {
-        $this->withLock(function (RateLimiter $limiter) use ($reservation): void {
+        $this->withLocks(array_column($reservation, 'key'), function (RateLimiter $limiter) use ($reservation): void {
             foreach ($reservation as $limit) {
                 if ($limiter->attempts($limit['key']) > 0) {
                     $limiter->decrement($limit['key'], $limit['decay']);
@@ -73,7 +73,7 @@ final readonly class FirstFactorOtpRatePolicy
 
         $limit = $this->limit('verify_per_ip', 'verify_per_ip', 30, 'verify:ip:' . $ip);
 
-        $this->withLock(function (RateLimiter $limiter) use ($limit): void {
+        $this->withLocks([$limit['key']], function (RateLimiter $limiter) use ($limit): void {
             if ($limiter->tooManyAttempts($limit['key'], $limit['max'])) {
                 throw new TooManyRequestsHttpException(max(1, $limiter->availableIn($limit['key'])), 'Too many requests.');
             }
@@ -108,11 +108,33 @@ final readonly class FirstFactorOtpRatePolicy
         ];
     }
 
-    private function withLock(callable $callback): mixed
+    /**
+     * Lock exactly the rate-limit keys the operation touches. Shared keys (per-IP,
+     * project SMS quota) still serialize, but unrelated destinations no longer wait
+     * on each other. Locks are taken in sorted order so concurrent callers can't deadlock.
+     *
+     * @param list<string> $keys
+     */
+    private function withLocks(array $keys, callable $callback): mixed
     {
         $store = (string) (config('cache.limiter') ?: config('cache.default'));
         $cache = Cache::store($store);
+        $keys = array_values(array_unique($keys));
+        sort($keys);
+        $held = [];
 
-        return $cache->lock('sp-jwt-ffotp:rate-policy-lock', 10)->block(5, fn (): mixed => $callback(new RateLimiter($cache)));
+        try {
+            foreach ($keys as $key) {
+                $lock = $cache->lock($key . ':lock', 10);
+                $lock->block(5);
+                $held[] = $lock;
+            }
+
+            return $callback(new RateLimiter($cache));
+        } finally {
+            foreach (array_reverse($held) as $lock) {
+                $lock->release();
+            }
+        }
     }
 }

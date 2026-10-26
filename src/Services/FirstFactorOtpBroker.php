@@ -11,7 +11,6 @@ use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
 use Sopheak\JwtAuth\Contracts\FirstFactorUserResolver;
@@ -27,6 +26,7 @@ use Sopheak\JwtAuth\Events\OtpCodeCreated;
 use Sopheak\JwtAuth\Events\OtpCodeResent;
 use Sopheak\JwtAuth\Models\FirstFactorOtpCode;
 use Sopheak\JwtAuth\Security\SecretHasher;
+use Sopheak\JwtAuth\Support\SchemaColumnCache;
 use Sopheak\JwtAuth\Services\Concerns\ResolvesOtpSender;
 
 final readonly class FirstFactorOtpBroker
@@ -46,7 +46,8 @@ final readonly class FirstFactorOtpBroker
         $this->assertPurposeAllowed($purpose);
         $this->assertRequestedTypeAllowed($requestedType);
 
-        $otp = $this->latestActive($destination, $purpose);
+        $destinationHash = $this->hasher->hash($destination->normalizedDestination);
+        $otp = $this->latestActive($destination, $purpose, $destinationHash);
 
         if ($otp instanceof FirstFactorOtpCode && ! $otp->last_sent_at->addSeconds($this->cooldownSeconds())->isPast()) {
             $retryAfter = $otp->last_sent_at->addSeconds($this->cooldownSeconds())->getTimestamp() - now()->getTimestamp();
@@ -57,7 +58,7 @@ final readonly class FirstFactorOtpBroker
         $reservation = $this->ratePolicy->reserveSend($destination, $this->resolveIp($ip));
 
         try {
-            return $this->issue($destination, $purpose, $requestedType);
+            return $this->issue($destination, $purpose, $requestedType, $destinationHash);
         } catch (Throwable $throwable) {
             $this->ratePolicy->releaseSend($reservation);
 
@@ -65,9 +66,11 @@ final readonly class FirstFactorOtpBroker
         }
     }
 
-    private function issue(OtpDestination $destination, string $purpose, ?string $requestedType): OtpDispatch
+    /** @param array{hash: string, hash_key_id: string|null}|null $destinationHash */
+    private function issue(OtpDestination $destination, string $purpose, ?string $requestedType, ?array $destinationHash = null): OtpDispatch
     {
-        $this->invalidatePrior($destination, $purpose);
+        $destinationHash ??= $this->hasher->hash($destination->normalizedDestination);
+        $this->invalidatePrior($destination, $purpose, $destinationHash);
 
         $testCode = $this->testCodeFor($destination);
 
@@ -77,7 +80,6 @@ final readonly class FirstFactorOtpBroker
 
         $plaintext = is_string($testCode) && $testCode !== '' ? $testCode : $this->generateCode((int) config('sp-jwt-auth.first_factor_otp.digits', 6));
         $hash = $this->hasher->hash($plaintext);
-        $destinationHash = $this->hasher->hash($destination->normalizedDestination);
 
         $otp = FirstFactorOtpCode::query()->create([
             'id' => (string) Str::uuid(),
@@ -191,7 +193,6 @@ final readonly class FirstFactorOtpBroker
 
             if (! $this->hasher->verify($code, $otp->code_hash, $otp->hash_key_id)) {
                 $otp->increment('attempts');
-                $otp->refresh();
 
                 Event::dispatch(new FirstFactorOtpFailed($otp));
 
@@ -226,7 +227,7 @@ final readonly class FirstFactorOtpBroker
 
         $column = $channel === 'email' ? 'email_verified_at' : 'phone_verified_at';
 
-        if (! Schema::hasColumn($user->getTable(), $column)) {
+        if (! app(SchemaColumnCache::class)->has($user, $column)) {
             return;
         }
 
@@ -251,9 +252,10 @@ final readonly class FirstFactorOtpBroker
         }
     }
 
-    private function latestActive(OtpDestination $destination, string $purpose): ?FirstFactorOtpCode
+    /** @param array{hash: string, hash_key_id: string|null}|null $destinationHash */
+    private function latestActive(OtpDestination $destination, string $purpose, ?array $destinationHash = null): ?FirstFactorOtpCode
     {
-        $destinationHash = $this->hasher->hash($destination->normalizedDestination);
+        $destinationHash ??= $this->hasher->hash($destination->normalizedDestination);
 
         return FirstFactorOtpCode::query()
             ->where('destination_hash', $destinationHash['hash'])
@@ -264,9 +266,10 @@ final readonly class FirstFactorOtpBroker
             ->first();
     }
 
-    private function invalidatePrior(OtpDestination $destination, string $purpose): void
+    /** @param array{hash: string, hash_key_id: string|null}|null $destinationHash */
+    private function invalidatePrior(OtpDestination $destination, string $purpose, ?array $destinationHash = null): void
     {
-        $destinationHash = $this->hasher->hash($destination->normalizedDestination);
+        $destinationHash ??= $this->hasher->hash($destination->normalizedDestination);
 
         $ids = FirstFactorOtpCode::query()
             ->where('destination_hash', $destinationHash['hash'])

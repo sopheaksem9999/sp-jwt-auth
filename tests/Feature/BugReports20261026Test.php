@@ -25,6 +25,7 @@ use Sopheak\JwtAuth\Services\JwtTokenService;
 use Sopheak\JwtAuth\Services\OAuthClientRepository;
 use Sopheak\JwtAuth\Services\OAuthServerService;
 use Sopheak\JwtAuth\Signing\ConfigSigningKeyRepository;
+use Sopheak\JwtAuth\Signing\SigningKeyRepository;
 use Sopheak\JwtAuth\Tests\TestCase;
 
 /** Regression tests for docs/bug-reports/2026-10-26-*. */
@@ -115,10 +116,11 @@ final class BugReports20261026Test extends TestCase
         $pair = $this->tokens()->issueTokenPair($this->createUser(), TokenContext::make());
 
         config()->set('sp-jwt-auth.keys.previous_kids', ['test-active']);
-        app()->forgetInstance(ConfigSigningKeyRepository::class);
+        app(SigningKeyRepository::class)->flush();
         self::assertSame($pair->accessTokenRecord->id, $this->tokens()->validateAccessToken($pair->accessToken)->id);
 
         config()->set('sp-jwt-auth.keys.compromised_kids', ['test-active']);
+        app(SigningKeyRepository::class)->flush();
         $this->expectException(AuthenticationException::class);
         $this->tokens()->validateAccessToken($pair->accessToken);
     }

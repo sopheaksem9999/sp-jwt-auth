@@ -78,7 +78,8 @@ final readonly class EmailVerificationBroker
 
         $record->forceFill(['verified_at' => now()])->save();
 
-        $result = new EmailVerificationResult($this->resolveUser($record->user_type, (string) $record->user_id), $this->unmaskableEmail($record));
+        $user = $this->resolveUser($record->user_type, (string) $record->user_id);
+        $result = new EmailVerificationResult($user, $this->unmaskableEmail($user, $record));
         Event::dispatch(new EmailVerified($result));
 
         return $result;
@@ -120,10 +121,8 @@ final readonly class EmailVerificationBroker
         return ($name[0] ?? '*') . '***@' . $domain;
     }
 
-    private function unmaskableEmail(EmailVerificationToken $record): string
+    private function unmaskableEmail(Authenticatable $user, EmailVerificationToken $record): string
     {
-        $user = $this->resolveUser($record->user_type, (string) $record->user_id);
-
         return (string) ($user->email ?? $record->email_masked);
     }
 }

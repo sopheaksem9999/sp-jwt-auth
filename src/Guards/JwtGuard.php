@@ -10,6 +10,7 @@ use Illuminate\Contracts\Auth\Guard;
 use Illuminate\Contracts\Auth\UserProvider;
 use Illuminate\Http\Request;
 use Sopheak\JwtAuth\Services\JwtTokenService;
+use Sopheak\JwtAuth\Support\LastUsedThrottle;
 
 final class JwtGuard implements Guard
 {
@@ -60,7 +61,9 @@ final class JwtGuard implements Guard
             $user->withAccessToken($token);
         }
 
-        $token->forceFill(['last_used_at' => now()])->save();
+        if (LastUsedThrottle::due($token->last_used_at)) {
+            $token->forceFill(['last_used_at' => now()])->save();
+        }
 
         return $this->user = $user;
     }

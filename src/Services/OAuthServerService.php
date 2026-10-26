@@ -30,6 +30,7 @@ use Sopheak\JwtAuth\Models\OAuthAuthorizationCode;
 use Sopheak\JwtAuth\Models\OAuthClient;
 use Sopheak\JwtAuth\Models\OAuthRefreshToken;
 use Sopheak\JwtAuth\Security\SecretHasher;
+use Sopheak\JwtAuth\Support\LastUsedThrottle;
 
 final readonly class OAuthServerService
 {
@@ -224,7 +225,9 @@ final readonly class OAuthServerService
             throw new AuthenticationException('OAuth token is invalid.');
         }
 
-        $row->forceFill(['last_used_at' => now()])->save();
+        if (LastUsedThrottle::due($row->last_used_at)) {
+            $row->forceFill(['last_used_at' => now()])->save();
+        }
 
         return new OAuthPrincipal(
             clientId: $row->client_id,
@@ -245,7 +248,7 @@ final readonly class OAuthServerService
             $code = (string) $request->request->get('code');
             $redirectUri = (string) $request->request->get('redirect_uri');
 
-            foreach (OAuthAuthorizationCode::query()->where('client_id', $client->id)->whereNull('revoked_at')->lockForUpdate()->get() as $row) {
+            foreach (OAuthAuthorizationCode::query()->where('client_id', $client->id)->whereNull('revoked_at')->where('expires_at', '>', now())->lockForUpdate()->get() as $row) {
                 if (! $row instanceof OAuthAuthorizationCode) {
                     continue;
                 }

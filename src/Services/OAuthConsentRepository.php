@@ -28,19 +28,18 @@ final class OAuthConsentRepository
 
     public function rememberConsent(Authenticatable $user, OAuthClient $client, array $scopes): void
     {
-        OAuthConsent::query()->updateOrCreate([
-            'client_id' => $client->id,
-            'user_type' => $user::class,
-            'user_id' => (string) $user->getAuthIdentifier(),
-        ], [
-            'id' => (string) (OAuthConsent::query()
-                ->where('client_id', $client->id)
-                ->where('user_type', $user::class)
-                ->where('user_id', (string) $user->getAuthIdentifier())
-                ->value('id') ?: Str::uuid()),
-            'scopes' => array_values($scopes),
-            'revoked_at' => null,
-        ]);
+        $consent = OAuthConsent::query()
+            ->where('client_id', $client->id)
+            ->where('user_type', $user::class)
+            ->where('user_id', (string) $user->getAuthIdentifier())
+            ->first() ?? new OAuthConsent([
+                'id' => (string) Str::uuid(),
+                'client_id' => $client->id,
+                'user_type' => $user::class,
+                'user_id' => (string) $user->getAuthIdentifier(),
+            ]);
+
+        $consent->forceFill(['scopes' => array_values($scopes), 'revoked_at' => null])->save();
     }
 
     public function revokeConsent(Authenticatable $user, OAuthClient $client): void
