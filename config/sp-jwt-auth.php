@@ -14,6 +14,8 @@ return [
 
     'access_ttl_minutes' => (int) env('SP_JWT_ACCESS_TTL_MINUTES', 15),
     'refresh_ttl_days' => (int) env('SP_JWT_REFRESH_TTL_DAYS', 60),
+    // Minimum minutes between last_used_at writes per token/key. 0 = every request (default). Recommended: 5.
+    'last_used_interval_minutes' => (int) env('SP_JWT_LAST_USED_INTERVAL_MINUTES', 0),
     'clock_skew_seconds' => (int) env('SP_JWT_CLOCK_SKEW_SECONDS', 60),
 
     'reuse_detection' => env('SP_JWT_REUSE_DETECTION', 'revoke_session'),

@@ -35,6 +35,7 @@ use Sopheak\JwtAuth\Http\Middleware\RequireOAuthClient;
 use Sopheak\JwtAuth\Http\Middleware\RequireOAuthScope;
 use Sopheak\JwtAuth\Security\HashKeyRepository;
 use Sopheak\JwtAuth\Security\SecretHasher;
+use Sopheak\JwtAuth\Support\SchemaColumnCache;
 use Sopheak\JwtAuth\Services\ApiKeyService;
 use Sopheak\JwtAuth\Services\DefaultFirstFactorUserResolver;
 use Sopheak\JwtAuth\Services\EmailVerificationBroker;
@@ -63,6 +64,7 @@ final class CoreSpJwtAuthServiceProvider extends ServiceProvider
         $this->app->singleton(SigningKeyRepository::class, ConfigSigningKeyRepository::class);
         $this->app->singleton(HashKeyRepository::class);
         $this->app->singleton(SecretHasher::class);
+        $this->app->singleton(SchemaColumnCache::class);
         $this->app->singleton(JwksFormatter::class);
         $this->app->singleton(JwtTokenService::class);
         $this->app->singleton(MfaChallengeBroker::class);

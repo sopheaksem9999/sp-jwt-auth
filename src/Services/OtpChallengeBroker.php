@@ -93,7 +93,6 @@ final readonly class OtpChallengeBroker
 
         if (! $this->hasher->verify($code, $otp->code_hash, $otp->hash_key_id)) {
             $otp->increment('attempts');
-            $otp->refresh();
             Event::dispatch(new OtpCodeFailed($otp));
             if ($otp->attempts >= $otp->max_attempts) {
                 Event::dispatch(new OtpCodeLocked($otp));

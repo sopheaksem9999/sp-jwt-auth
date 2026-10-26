@@ -31,6 +31,14 @@ All notable changes to `sopheak/sp-jwt-auth` will be documented in this file.
 - `sp-jwt-auth:prune` deletes in batches (`--chunk`, default 1000).
 - Documentation corrected where it disagreed with the code (OAuth responses, token prefix, refresh token format, env var names).
 
+### Performance
+- Signing keys and hash keys are memoized (key files are read once); `flush()` on both repositories. Under Octane a replaced key file or changed key config is only picked up after a worker restart or `flush()`.
+- New `last_used_interval_minutes` (`SP_JWT_LAST_USED_INTERVAL_MINUTES`, default `0` = write on every request, as before). Set to `5` to cut `last_used_at` writes for JWTs, API keys and OAuth tokens; `ApiKeyUsed` still fires every time.
+- First-factor OTP rate limiting locks per rate-limit key (sorted order) instead of one global lock; the shared SMS project quota stays atomic.
+- OAuth authorization-code exchange no longer locks/scans expired codes; new index `sp_oauth_auth_codes_active_index` (on PostgreSQL create it first with `CREATE INDEX CONCURRENTLY`, the migration then skips).
+- Refresh rotation updates the old refresh row once. Compatibility: `beforeTokenIssue` hooks now see the old refresh row as not yet revoked.
+- Fewer queries: schema-column check cached, email verification resolves the user once, identity/consent upserts drop a pre-query, OTP failed attempts drop a `refresh()`, the OTP destination is hashed once per request.
+
 ### Added
 - `OAuthServerService::authenticateClient()`, `denyAuthorizationRequest()`, and an optional `$client` argument on `revokeToken()` / `introspect()`.
 - `ExternalIdentityStore::unlink()`.

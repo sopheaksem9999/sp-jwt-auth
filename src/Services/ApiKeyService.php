@@ -18,6 +18,7 @@ use Sopheak\JwtAuth\Events\ApiKeyRotated;
 use Sopheak\JwtAuth\Events\ApiKeyUsed;
 use Sopheak\JwtAuth\Models\ApiKey;
 use Sopheak\JwtAuth\Security\SecretHasher;
+use Sopheak\JwtAuth\Support\LastUsedThrottle;
 use Symfony\Component\HttpFoundation\IpUtils;
 
 final readonly class ApiKeyService
@@ -81,7 +82,10 @@ final readonly class ApiKeyService
             throw new AuthenticationException('API key is invalid.');
         }
 
-        $apiKey->forceFill(['last_used_at' => now()])->save();
+        if (LastUsedThrottle::due($apiKey->last_used_at)) {
+            $apiKey->forceFill(['last_used_at' => now()])->save();
+        }
+
         Event::dispatch(new ApiKeyUsed($apiKey));
 
         return new ApiKeyPrincipal($apiKey->id, $apiKey->owner_type, $apiKey->owner_id, $apiKey->scopes ?? [], $apiKey->claims ?? [], $apiKey->expires_at);

@@ -8,6 +8,9 @@ use RuntimeException;
 
 final class ConfigSigningKeyRepository implements SigningKeyRepository
 {
+    /** @var array<string, SigningKey> */
+    private array $resolved = [];
+
     public function active(): SigningKey
     {
         $kid = (string) config('sp-jwt-auth.keys.active_kid');
@@ -57,7 +60,22 @@ final class ConfigSigningKeyRepository implements SigningKeyRepository
         return $keys;
     }
 
+    /**
+     * Resolved keys are memoized for the life of the singleton, so key files are
+     * read once. Under long-lived workers (Octane) a replaced key file is only
+     * picked up after a restart or flush().
+     */
+    public function flush(): void
+    {
+        $this->resolved = [];
+    }
+
     private function make(string $kid): SigningKey
+    {
+        return $this->resolved[$kid] ??= $this->load($kid);
+    }
+
+    private function load(string $kid): SigningKey
     {
         $item = config('sp-jwt-auth.keys.items.' . $kid);
 
