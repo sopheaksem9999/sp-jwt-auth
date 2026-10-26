@@ -4,10 +4,24 @@ declare(strict_types=1);
 
 namespace Sopheak\JwtAuth\Tests\Feature;
 
+use Sopheak\JwtAuth\Services\OAuthClientRepository;
+use Sopheak\JwtAuth\DTO\OAuthClientData;
+use Sopheak\JwtAuth\Services\OAuthServerService;
+use Sopheak\JwtAuth\DTO\OAuthAuthorizationRequest;
+use Sopheak\JwtAuth\DTO\OAuthConsentContext;
+use Sopheak\JwtAuth\Exceptions\OAuthInvalidGrantException;
+use Sopheak\JwtAuth\Services\EmailVerificationBroker;
+use Sopheak\JwtAuth\Services\ExternalIdentityStore;
+use Sopheak\JwtAuth\DTO\ExternalIdentity;
+use Sopheak\JwtAuth\Contracts\FirstFactorUserResolver;
+use Sopheak\JwtAuth\Services\FirstFactorOtpBroker;
+use Illuminate\Auth\AuthenticationException;
+use Sopheak\JwtAuth\Models\FirstFactorOtpCode;
 use Throwable;
 use Symfony\Component\HttpKernel\Exception\TooManyRequestsHttpException;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Cache\RateLimiter;
+use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Schema;
@@ -166,5 +180,108 @@ final class PerformanceOptimizationsTest extends TestCase
         $migration->up();
 
         self::assertTrue(Schema::hasIndex('sp_oauth_auth_codes', 'sp_oauth_auth_codes_active_index'));
+    }
+
+    /** @param list<string> $sql */
+    private function countQueries(array $sql, string $verb, string $table): int
+    {
+        return count(array_filter($sql, static fn (string $q): bool => str_starts_with($q, $verb) && str_contains($q, $table)));
+    }
+
+    public function test_expired_authorization_codes_are_not_locked_or_scanned_and_still_fail_identically(): void
+    {
+        $client = app(OAuthClientRepository::class)->createClient(new OAuthClientData(
+            name: 'SPA',
+            redirectUris: ['https://client.test/cb'],
+            allowedGrants: ['authorization_code'],
+            allowedScopes: ['a'],
+            confidential: false,
+        ))->client;
+        $oauth = app(OAuthServerService::class);
+        $code = $oauth->approveAuthorizationRequest(
+            new OAuthAuthorizationRequest(client: $client, redirectUri: 'https://client.test/cb', scopes: ['a']),
+            $this->createUser(),
+            new OAuthConsentContext(scopes: ['a']),
+        );
+        $code->record->forceFill(['expires_at' => now()->subMinute()])->save();
+
+        $request = request()->create('/oauth/token', 'POST', [
+            'grant_type' => 'authorization_code', 'client_id' => $client->id,
+            'redirect_uri' => 'https://client.test/cb', 'code' => $code->code,
+        ]);
+        $sql = $this->captureSql(function () use ($oauth, $request): void {
+            try {
+                $oauth->issueTokenFromRequest($request);
+                self::fail('Expected an invalid grant.');
+            } catch (OAuthInvalidGrantException $oAuthInvalidGrantException) {
+                self::assertSame('OAuth authorization code is invalid.', $oAuthInvalidGrantException->getMessage());
+            }
+        });
+
+        $selects = array_filter($sql, static fn (string $q): bool => str_starts_with($q, 'select') && str_contains($q, 'sp_oauth_auth_codes'));
+        self::assertNotEmpty($selects);
+        foreach ($selects as $query) {
+            self::assertStringContainsString('"expires_at" >', $query);
+        }
+    }
+
+    public function test_email_verification_resolves_the_user_once(): void
+    {
+        $user = $this->createUser();
+        $dispatch = app(EmailVerificationBroker::class)->createVerificationToken($user, 'user@example.com');
+
+        $sql = $this->captureSql(fn () => app(EmailVerificationBroker::class)->verifyEmailToken($dispatch->token));
+
+        self::assertSame(1, $this->countQueries($sql, 'select', 'from "users"'));
+    }
+
+    public function test_identity_and_consent_upserts_do_not_pre_query_the_id(): void
+    {
+        $store = app(ExternalIdentityStore::class);
+        $identity = new ExternalIdentity(provider: 'google', providerUserId: 'g1');
+        $store->store($identity);
+        $this->travel(5)->seconds(); // last_resolved_at changes, so the row is dirty
+
+        $sql = $this->captureSql(fn () => $store->store($identity));
+
+        self::assertSame(1, $this->countQueries($sql, 'select', 'sp_jwt_external_identities'));
+        self::assertSame(1, $this->countQueries($sql, 'update', 'sp_jwt_external_identities'));
+    }
+
+    public function test_failed_first_factor_attempt_does_not_reselect_the_code(): void
+    {
+        config()->set('sp-jwt-auth.first_factor_otp.enabled', true);
+        config()->set('sp-jwt-auth.first_factor_otp.test_mode', true);
+        config()->set('sp-jwt-auth.first_factor_otp.test_code', '424242');
+        config()->set('sp-jwt-auth.first_factor_otp.limits.verify_per_ip', 100);
+
+        $user = $this->createUser();
+        $this->app->instance(FirstFactorUserResolver::class, new readonly class ($user) implements FirstFactorUserResolver {
+            public function __construct(private Authenticatable $user)
+            {
+            }
+
+            public function resolve(OtpDestination $destination, string $purpose): Authenticatable
+            {
+                return $this->user;
+            }
+
+            public function create(OtpDestination $destination, string $purpose, ?string $requestedType): ?Authenticatable
+            {
+                return null;
+            }
+        });
+        $broker = app(FirstFactorOtpBroker::class);
+        $dispatch = $broker->request(OtpDestination::email('user@example.com'), 'login', null, '10.1.1.1');
+
+        $sql = $this->captureSql(function () use ($broker, $dispatch): void {
+            try {
+                $broker->verify($dispatch->otpId, '000000', null, '10.1.1.1');
+            } catch (AuthenticationException) {
+            }
+        });
+
+        self::assertSame(1, $this->countQueries($sql, 'select', 'sp_jwt_first_factor_otp_codes'));
+        self::assertSame(1, FirstFactorOtpCode::query()->find($dispatch->otpId)->attempts);
     }
 }
