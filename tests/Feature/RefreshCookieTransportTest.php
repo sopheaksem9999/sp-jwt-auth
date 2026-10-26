@@ -74,6 +74,27 @@ final class RefreshCookieTransportTest extends TestCase
         self::assertNotNull(JwtRefreshToken::query()->find($pair->refreshTokenRecord->id)->revoked_at);
     }
 
+    public function test_every_cookie_setting_response_also_exposes_the_csrf_value_in_a_header(): void
+    {
+        $pair = $this->pair();
+        $refresh = $this->withCsrf(['sp_refresh_token' => $pair->refreshToken])->postJson('/auth/token/refresh');
+
+        $refresh->assertOk()->assertHeader('X-SP-CSRF');
+        self::assertSame($this->cookie($refresh, 'sp_csrf')->getValue(), $refresh->headers->get('X-SP-CSRF'));
+        self::assertNotSame('csrf-value', $refresh->headers->get('X-SP-CSRF'));
+
+        // A cross-site client has no readable cookie: it echoes the exposed value, which is the cookie it was sent.
+        $next = $this->flushHeaders()->withCredentials()
+            ->withUnencryptedCookies(['sp_refresh_token' => $this->cookie($refresh, 'sp_refresh_token')->getValue(), 'sp_csrf' => $refresh->headers->get('X-SP-CSRF')])
+            ->withHeader('X-SP-CSRF', (string) $refresh->headers->get('X-SP-CSRF'))
+            ->postJson('/auth/token/refresh');
+        $next->assertOk();
+        self::assertSame($this->cookie($next, 'sp_csrf')->getValue(), $next->headers->get('X-SP-CSRF'));
+
+        $helper = TokenResponse::withRefreshCookie(new JsonResponse(["access_token" => "a"]), $pair);
+        self::assertSame(collect($helper->headers->getCookies())->first(fn (Cookie $c): bool => $c->getName() === 'sp_csrf')->getValue(), $helper->headers->get('X-SP-CSRF'));
+    }
+
     public function test_missing_or_wrong_csrf_header_is_403_and_does_not_rotate(): void
     {
         $pair = $this->pair();
