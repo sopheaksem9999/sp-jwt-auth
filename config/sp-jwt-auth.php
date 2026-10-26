@@ -96,6 +96,22 @@ return [
         'enabled' => filter_var(env('SP_JWT_TOKEN_ENDPOINTS_ENABLED', false), FILTER_VALIDATE_BOOL),
         'route_prefix' => env('SP_JWT_TOKEN_ENDPOINTS_ROUTE_PREFIX', 'auth'),
         'response_envelope' => env('SP_JWT_TOKEN_ENDPOINTS_RESPONSE_ENVELOPE', 'raw'),
+        // body (default) | cookie (refresh token only in an httpOnly cookie) | both (migration).
+        'refresh_transport' => env('SP_JWT_REFRESH_TRANSPORT', 'body'),
+        'refresh_cookie' => [
+            'name' => env('SP_JWT_REFRESH_COOKIE_NAME', 'sp_refresh_token'),
+            'path' => env('SP_JWT_REFRESH_COOKIE_PATH'), // default: /{route_prefix}/token
+            'domain' => env('SP_JWT_REFRESH_COOKIE_DOMAIN'),
+            'same_site' => env('SP_JWT_REFRESH_COOKIE_SAME_SITE', 'strict'), // strict | lax | none
+            'secure' => filter_var(env('SP_JWT_REFRESH_COOKIE_SECURE', true), FILTER_VALIDATE_BOOL),
+        ],
+        // Double-submit CSRF for cookie-borne refresh/revoke: a JS-readable cookie whose value
+        // must be echoed in the header. A mismatch returns 403.
+        'csrf' => [
+            'enabled' => filter_var(env('SP_JWT_REFRESH_CSRF_ENABLED', true), FILTER_VALIDATE_BOOL),
+            'header' => env('SP_JWT_REFRESH_CSRF_HEADER', 'X-SP-CSRF'),
+            'cookie' => env('SP_JWT_REFRESH_CSRF_COOKIE', 'sp_csrf'),
+        ],
     ],
 
     'email_verification' => [

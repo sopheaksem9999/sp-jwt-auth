@@ -67,3 +67,32 @@ Response `200`:
 ```
 
 Revocation covers the whole session: all access and refresh rows for the current access token's `session_id` are revoked. Without a valid bearer token the endpoint returns `401`.
+
+## Refresh token in an httpOnly cookie
+
+Browser apps can keep the refresh token out of JavaScript. Set `SP_JWT_REFRESH_TRANSPORT`:
+
+| Value | Behaviour |
+|---|---|
+| `body` (default) | Unchanged: the refresh token is in the JSON body, in and out. |
+| `cookie` | The refresh token is only ever in an httpOnly cookie. Login, refresh and the OTP verify step still return `access_token`, `token_type` and `expires_in` in the body, but no `refresh_token`. A `refresh_token` body field is ignored. |
+| `both` | Body and cookie, for migrating clients. |
+
+```env
+SP_JWT_REFRESH_TRANSPORT=cookie
+SP_JWT_REFRESH_COOKIE_NAME=sp_refresh_token
+SP_JWT_REFRESH_COOKIE_SAME_SITE=strict   # strict | lax | none
+SP_JWT_REFRESH_COOKIE_SECURE=true
+SP_JWT_REFRESH_COOKIE_DOMAIN=
+SP_JWT_REFRESH_COOKIE_PATH=              # default /{route_prefix}/token
+SP_JWT_REFRESH_CSRF_ENABLED=true
+SP_JWT_REFRESH_CSRF_HEADER=X-SP-CSRF
+SP_JWT_REFRESH_CSRF_COOKIE=sp_csrf
+```
+
+- **Rotation:** every `POST /auth/token/refresh` sets the new cookie in the same response that revokes the old token. Reuse detection is unchanged; a failed cookie refresh returns 401 and clears the cookie.
+- **Logout:** `POST /auth/token/revoke` works with the access token as before, or with the cookie alone (so logout still works after the access token expired). It clears the cookie even if the token was already revoked.
+- **CSRF (double-submit):** with the cookie as the credential, the response also sets a JavaScript-readable `sp_csrf` cookie. The client must echo its value in the `X-SP-CSRF` header on refresh and revoke. A missing or wrong header returns **403** (not 401, which clients read as "session ended"). Requests authenticated by a bearer token or a body field need no CSRF header. `SameSite=strict` is the default.
+- **Cross-site (SPA on another origin):** set `SAME_SITE=none` (forces `Secure`), and configure CORS with `supports_credentials => true` and exact allowed origins (no `*`). The client must send `credentials: 'include'`.
+- **Host login routes:** wrap your own login/refresh JSON response with `TokenResponse::withRefreshCookie($response, $pair)`. It is a no-op in `body` mode, so the route can call it unconditionally; in `cookie` mode it also removes `refresh_token` from the body.
+- **Encryption:** the package routes are not in the `web` group, so the cookie is plain. If you register them inside a group that uses `EncryptCookies`, exclude the refresh and CSRF cookie names.

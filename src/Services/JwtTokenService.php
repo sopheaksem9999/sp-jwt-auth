@@ -225,6 +225,30 @@ final readonly class JwtTokenService
         Event::dispatch(new TokenRevoked($jti));
     }
 
+    /**
+     * Revoke the session a refresh token belongs to, whether or not the token is
+     * already revoked or expired (logout must be idempotent). The secret is still
+     * verified. Returns false when the token is malformed, unknown or has a wrong secret.
+     */
+    public function revokeSessionByRefreshToken(string $refreshToken): bool
+    {
+        try {
+            [$id, $secret] = $this->parseRefreshToken($refreshToken);
+        } catch (AuthenticationException) {
+            return false;
+        }
+
+        $row = JwtRefreshToken::query()->find($id);
+
+        if (! $row instanceof JwtRefreshToken || ! $this->hasher->verify($secret, $row->secret_hash, $row->hash_key_id)) {
+            return false;
+        }
+
+        $this->revokeSession($row->session_id);
+
+        return true;
+    }
+
     public function revokeSession(string $sessionId): void
     {
         JwtAccessToken::query()->where('session_id', $sessionId)->whereNull('revoked_at')->update(['revoked_at' => now()]);

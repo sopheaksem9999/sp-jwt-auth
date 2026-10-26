@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Sopheak\JwtAuth\Support;
 
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Response;
 use Sopheak\JwtAuth\DTO\TokenPair;
 
 final class TokenResponse
@@ -34,5 +36,15 @@ final class TokenResponse
         }
 
         return $response;
+    }
+
+    /**
+     * For host login/refresh routes: in cookie or both mode, set the refresh token as an
+     * httpOnly cookie (plus the CSRF cookie) and, in cookie mode, drop it from the body.
+     * A no-op in body mode, so routes can call it unconditionally.
+     */
+    public static function withRefreshCookie(JsonResponse|Response $response, TokenPair $pair): JsonResponse|Response
+    {
+        return RefreshCookie::attach($response, $pair);
     }
 }

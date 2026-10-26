@@ -90,6 +90,21 @@ final class FirstFactorOtpHttpTest extends TestCase
         $response->assertJsonStructure(['access_token', 'refresh_token', 'token_type', 'expires_in']);
     }
 
+    public function test_verify_endpoint_sets_the_refresh_cookie_in_cookie_mode(): void
+    {
+        config()->set('sp-jwt-auth.first_factor_otp.test_mode', true);
+        config()->set('sp-jwt-auth.first_factor_otp.test_code', '424242');
+        config()->set('sp-jwt-auth.token_endpoints.refresh_transport', 'cookie');
+        $this->bindResolver($this->createUser());
+
+        $request = $this->postJson('/otp/request', ['destination' => 'user@example.com', 'channel' => 'email', 'purpose' => 'login']);
+        $response = $this->postJson('/otp/verify', ['otp_id' => $request->json('otp_id'), 'code' => '424242']);
+
+        $response->assertOk()->assertJsonStructure(['access_token', 'token_type', 'expires_in'])->assertJsonMissingPath('refresh_token');
+        $response->assertCookie('sp_refresh_token');
+        $response->assertCookie('sp_csrf');
+    }
+
     public function test_request_endpoint_rate_limits_per_destination_with_retry_after(): void
     {
         $this->bindResolver($this->createUser());
