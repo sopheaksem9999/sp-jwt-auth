@@ -156,8 +156,9 @@ final readonly class JwtTokenService
             }
 
             $token = JwtAccessToken::query()->find((string) ($decoded->jti ?? ''));
+            $leewaySeconds = max(0, (int) config('sp-jwt-auth.clock_skew_seconds', 0));
 
-            if (! $token instanceof JwtAccessToken || $token->isRevoked() || $token->expires_at->isPast()) {
+            if (! $token instanceof JwtAccessToken || $token->isRevoked() || $token->expires_at->copy()->addSeconds($leewaySeconds)->isPast()) {
                 throw new RuntimeException('Access token is inactive.');
             }
 
