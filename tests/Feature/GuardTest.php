@@ -102,8 +102,8 @@ final class GuardTest extends TestCase
         self::assertSame($user, $guard->user());
         self::assertSame($user->getAuthIdentifier(), $guard->id());
 
-        // setRequest resets resolved user
-        $guard->setRequest(Request::create('/test', 'GET'));
+        // forgetUser resets user
+        $guard->forgetUser();
         self::assertFalse($guard->hasUser());
         self::assertNull($guard->user());
     }

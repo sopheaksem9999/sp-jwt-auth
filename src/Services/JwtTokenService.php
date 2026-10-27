@@ -169,9 +169,22 @@ final readonly class JwtTokenService
 
     public function rotateRefreshToken(string $refreshToken, ?TokenContext $override = null): TokenPair
     {
-        return DB::transaction(function () use ($refreshToken, $override): TokenPair {
-            [$id, $secret] = $this->parseRefreshToken($refreshToken);
+        [$id, $secret] = $this->parseRefreshToken($refreshToken);
 
+        /** @var JwtRefreshToken|null $row */
+        $row = JwtRefreshToken::query()->find($id);
+
+        if (! $row instanceof JwtRefreshToken) {
+            throw new AuthenticationException('Unauthenticated.');
+        }
+
+        if ($row->isRevoked()) {
+            Event::dispatch(new RefreshTokenReuseDetected($row));
+            $this->applyReuseDetection($row);
+            throw new AuthenticationException('Unauthenticated.');
+        }
+
+        return DB::transaction(function () use ($id, $secret, $override): TokenPair {
             /** @var JwtRefreshToken|null $row */
             $row = JwtRefreshToken::query()->lockForUpdate()->find($id);
 
@@ -180,8 +193,6 @@ final readonly class JwtTokenService
             }
 
             if ($row->isRevoked()) {
-                Event::dispatch(new RefreshTokenReuseDetected($row));
-                $this->applyReuseDetection($row);
                 throw new AuthenticationException('Unauthenticated.');
             }
 

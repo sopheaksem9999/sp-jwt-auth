@@ -15,6 +15,7 @@ use Sopheak\JwtAuth\Support\LastUsedThrottle;
 final class JwtGuard implements Guard
 {
     private ?Authenticatable $user = null;
+    private bool $userWasSetExplicitly = false;
 
     public function __construct(
         private readonly JwtTokenService $tokens,
@@ -86,6 +87,15 @@ final class JwtGuard implements Guard
     public function setUser(Authenticatable $user): static
     {
         $this->user = $user;
+        $this->userWasSetExplicitly = true;
+
+        return $this;
+    }
+
+    public function forgetUser(): static
+    {
+        $this->user = null;
+        $this->userWasSetExplicitly = false;
 
         return $this;
     }
@@ -93,6 +103,10 @@ final class JwtGuard implements Guard
     public function setRequest(Request $request): void
     {
         $this->request = $request;
-        $this->user = null;
+
+        if ($request->bearerToken() !== null || ! $this->userWasSetExplicitly) {
+            $this->user = null;
+            $this->userWasSetExplicitly = false;
+        }
     }
 }
