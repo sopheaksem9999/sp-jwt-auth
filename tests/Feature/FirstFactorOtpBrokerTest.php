@@ -433,4 +433,17 @@ final class FirstFactorOtpBrokerTest extends TestCase
         $this->assertNotEmpty($verification->pair->accessToken);
         $this->assertNotNull(FirstFactorOtpCode::query()->findOrFail($dispatch->otpId)->verified_at);
     }
+
+    public function test_verify_rejects_when_destination_is_empty_string_and_resolver_returns_null(): void
+    {
+        $this->app->instance(\Sopheak\JwtAuth\Contracts\FirstFactorUserResolver::class, new \Sopheak\JwtAuth\Services\DefaultFirstFactorUserResolver());
+        config()->set('sp-jwt-auth.first_factor_otp.user_model', User::class);
+        $this->createUser(['email' => '']);
+
+        $dispatch = $this->broker()->request(OtpDestination::email('safe@example.com'), 'login');
+
+        $this->expectException(AuthenticationException::class);
+
+        $this->broker()->verify($dispatch->otpId, $dispatch->plaintextCode);
+    }
 }

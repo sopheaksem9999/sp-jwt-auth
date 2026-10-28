@@ -94,4 +94,20 @@ final class DefaultFirstFactorUserResolverTest extends TestCase
 
         $this->resolver()->resolve(OtpDestination::email('a@b.com'), 'login');
     }
+
+    public function test_resolve_returns_null_when_normalized_destination_is_empty(): void
+    {
+        $this->createUser(['email' => '']);
+
+        $found = $this->resolver()->resolve(new OtpDestination('email', '', '***'), 'login');
+
+        $this->assertNull($found);
+    }
+
+    public function test_create_returns_null_when_normalized_destination_is_empty(): void
+    {
+        $user = $this->resolver()->create(new OtpDestination('email', '', '***'), 'login', null);
+
+        $this->assertNull($user);
+    }
 }

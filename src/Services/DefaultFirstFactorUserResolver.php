@@ -15,6 +15,10 @@ final class DefaultFirstFactorUserResolver implements FirstFactorUserResolver
 {
     public function resolve(OtpDestination $destination, string $purpose): ?Authenticatable
     {
+        if ($destination->normalizedDestination === '') {
+            return null;
+        }
+
         $model = $this->modelClass();
         $column = $this->columnFor($destination->channel);
 
@@ -28,6 +32,10 @@ final class DefaultFirstFactorUserResolver implements FirstFactorUserResolver
 
     public function create(OtpDestination $destination, string $purpose, ?string $requestedType): ?Authenticatable
     {
+        if ($destination->normalizedDestination === '') {
+            return null;
+        }
+
         $model = $this->modelClass();
         $column = $this->columnFor($destination->channel);
 
