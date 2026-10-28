@@ -8,6 +8,7 @@ use Illuminate\Auth\AuthenticationException;
 use Illuminate\Support\Facades\Event;
 use Sopheak\JwtAuth\DTO\TokenContext;
 use Sopheak\JwtAuth\Events\RefreshTokenReuseDetected;
+use Sopheak\JwtAuth\Models\JwtAccessToken;
 use Sopheak\JwtAuth\Models\JwtRefreshToken;
 use Sopheak\JwtAuth\Services\JwtTokenService;
 use Sopheak\JwtAuth\Tests\TestCase;
@@ -39,5 +40,7 @@ final class RefreshRotationConcurrencyTest extends TestCase
         }
 
         Event::assertDispatched(RefreshTokenReuseDetected::class, static fn(RefreshTokenReuseDetected $event): bool => $event->refreshToken->id === $pair->refreshTokenRecord->id);
+
+        self::assertSame(0, JwtAccessToken::query()->where('session_id', 'session-concurrent')->whereNull('revoked_at')->count());
     }
 }

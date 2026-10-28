@@ -18,6 +18,7 @@ final class PasswordResetToken extends Model
 
     protected $hidden = [
         'token_hash',
+        'email_hash',
         'hash_key_id',
     ];
 

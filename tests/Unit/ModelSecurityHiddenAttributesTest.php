@@ -31,7 +31,7 @@ final class ModelSecurityHiddenAttributesTest extends TestCase
             OAuthAuthorizationCode::class => ['code_hash', 'hash_key_id'],
             FirstFactorOtpCode::class => ['code_hash', 'destination_hash', 'hash_key_id'],
             MfaOtpCode::class => ['code_hash', 'hash_key_id'],
-            PasswordResetToken::class => ['token_hash', 'hash_key_id'],
+            PasswordResetToken::class => ['token_hash', 'email_hash', 'hash_key_id'],
             EmailVerificationToken::class => ['token_hash', 'email_hash', 'hash_key_id'],
             ExternalIdentity::class => ['provider_tokens'],
             Device::class => ['secret_hash', 'hash_key_id'],

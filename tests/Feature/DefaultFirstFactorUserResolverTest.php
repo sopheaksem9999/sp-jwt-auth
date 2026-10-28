@@ -110,4 +110,20 @@ final class DefaultFirstFactorUserResolverTest extends TestCase
 
         $this->assertNull($user);
     }
+
+    public function test_resolve_returns_null_when_normalized_destination_is_whitespace_only(): void
+    {
+        $this->createUser(['email' => '']);
+
+        $found = $this->resolver()->resolve(new OtpDestination('email', '   ', '***'), 'login');
+
+        $this->assertNull($found);
+    }
+
+    public function test_create_returns_null_when_normalized_destination_is_whitespace_only(): void
+    {
+        $user = $this->resolver()->create(new OtpDestination('email', '   ', '***'), 'login', null);
+
+        $this->assertNull($user);
+    }
 }

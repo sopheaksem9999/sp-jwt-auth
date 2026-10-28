@@ -80,17 +80,18 @@ final readonly class PasswordResetBroker
     {
         [$id, $secret] = $this->parseToken($token);
 
-        return DB::transaction(function () use ($id, $secret, $consume): PasswordResetResult {
+        $result = DB::transaction(function () use ($id, $secret, $consume): ?PasswordResetResult {
             /** @var PasswordResetToken|null $record */
             $record = PasswordResetToken::query()->lockForUpdate()->find($id);
 
             if (! $record instanceof PasswordResetToken || $record->used_at !== null || $record->expires_at->isPast() || $record->attempts >= $record->max_attempts) {
-                throw new AuthenticationException('Password reset token is invalid.');
+                return null;
             }
 
             if (! $this->hasher->verify($secret, $record->token_hash, $record->hash_key_id)) {
                 $record->increment('attempts');
-                throw new AuthenticationException('Password reset token is invalid.');
+
+                return null;
             }
 
             if ($consume) {
@@ -106,6 +107,12 @@ final readonly class PasswordResetBroker
 
             return $result;
         });
+
+        if (! $result instanceof PasswordResetResult) {
+            throw new AuthenticationException('Password reset token is invalid.');
+        }
+
+        return $result;
     }
 
     private function parseToken(string $token): array

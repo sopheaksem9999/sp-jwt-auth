@@ -15,7 +15,7 @@ final class DefaultFirstFactorUserResolver implements FirstFactorUserResolver
 {
     public function resolve(OtpDestination $destination, string $purpose): ?Authenticatable
     {
-        if ($destination->normalizedDestination === '') {
+        if (trim($destination->normalizedDestination) === '') {
             return null;
         }
 
@@ -32,7 +32,7 @@ final class DefaultFirstFactorUserResolver implements FirstFactorUserResolver
 
     public function create(OtpDestination $destination, string $purpose, ?string $requestedType): ?Authenticatable
     {
-        if ($destination->normalizedDestination === '') {
+        if (trim($destination->normalizedDestination) === '') {
             return null;
         }
 

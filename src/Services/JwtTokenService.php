@@ -185,51 +185,61 @@ final readonly class JwtTokenService
             throw new AuthenticationException('Unauthenticated.');
         }
 
-        return DB::transaction(function () use ($id, $secret, $override): TokenPair {
-            /** @var JwtRefreshToken|null $row */
-            $row = JwtRefreshToken::query()->lockForUpdate()->find($id);
+        $reusedRow = null;
 
-            if (! $row instanceof JwtRefreshToken) {
-                throw new AuthenticationException('Unauthenticated.');
+        try {
+            return DB::transaction(function () use ($id, $secret, $override, &$reusedRow): TokenPair {
+                /** @var JwtRefreshToken|null $row */
+                $row = JwtRefreshToken::query()->lockForUpdate()->find($id);
+
+                if (! $row instanceof JwtRefreshToken) {
+                    throw new AuthenticationException('Unauthenticated.');
+                }
+
+                if ($row->isRevoked()) {
+                    $reusedRow = $row;
+                    throw new AuthenticationException('Unauthenticated.');
+                }
+
+                if ($row->expires_at->isPast() || ! $this->hasher->verify($secret, $row->secret_hash, $row->hash_key_id)) {
+                    throw new AuthenticationException('Unauthenticated.');
+                }
+
+                $oldAccess = JwtAccessToken::query()->find($row->access_token_id);
+                $context = $override ?? new TokenContext(
+                    scopes: $row->scopes ?? [],
+                    claims: $row->claims ?? [],
+                    subjectType: $oldAccess?->subject_type,
+                    subjectId: $oldAccess?->subject_id,
+                    audience: $oldAccess?->audience,
+                    deviceId: $oldAccess?->device_id,
+                    deviceName: $oldAccess?->device_name,
+                    sessionId: $row->session_id,
+                );
+
+                $now = now();
+
+                if ($oldAccess instanceof JwtAccessToken) {
+                    $oldAccess->forceFill(['revoked_at' => $now])->save();
+                }
+
+                $user = $this->resolveRefreshUser($row);
+                $pair = $this->issueTokenPair($user, $context);
+
+                $row->forceFill(['revoked_at' => $now, 'replaced_by_id' => $pair->refreshTokenRecord->id])->save();
+
+                Event::dispatch(new TokenRefreshed($row, $pair));
+
+                return $pair;
+            });
+        } catch (AuthenticationException $authenticationException) {
+            if ($reusedRow instanceof JwtRefreshToken) {
+                Event::dispatch(new RefreshTokenReuseDetected($reusedRow));
+                $this->applyReuseDetection($reusedRow);
             }
 
-            if ($row->isRevoked()) {
-                Event::dispatch(new RefreshTokenReuseDetected($row));
-                $this->applyReuseDetection($row);
-                throw new AuthenticationException('Unauthenticated.');
-            }
-
-            if ($row->expires_at->isPast() || ! $this->hasher->verify($secret, $row->secret_hash, $row->hash_key_id)) {
-                throw new AuthenticationException('Unauthenticated.');
-            }
-
-            $oldAccess = JwtAccessToken::query()->find($row->access_token_id);
-            $context = $override ?? new TokenContext(
-                scopes: $row->scopes ?? [],
-                claims: $row->claims ?? [],
-                subjectType: $oldAccess?->subject_type,
-                subjectId: $oldAccess?->subject_id,
-                audience: $oldAccess?->audience,
-                deviceId: $oldAccess?->device_id,
-                deviceName: $oldAccess?->device_name,
-                sessionId: $row->session_id,
-            );
-
-            $now = now();
-
-            if ($oldAccess instanceof JwtAccessToken) {
-                $oldAccess->forceFill(['revoked_at' => $now])->save();
-            }
-
-            $user = $this->resolveRefreshUser($row);
-            $pair = $this->issueTokenPair($user, $context);
-
-            $row->forceFill(['revoked_at' => $now, 'replaced_by_id' => $pair->refreshTokenRecord->id])->save();
-
-            Event::dispatch(new TokenRefreshed($row, $pair));
-
-            return $pair;
-        });
+            throw $authenticationException;
+        }
     }
 
     public function revokeAccessToken(string $jti): void
