@@ -115,9 +115,8 @@ final readonly class OtpChallengeBroker
 
     private function generateCode(int $digits): string
     {
-        $min = 10 ** max(1, $digits - 1);
-        $max = (10 ** $digits) - 1;
+        $max = (10 ** max(1, $digits)) - 1;
 
-        return (string) random_int($min, $max);
+        return str_pad((string) random_int(0, $max), $digits, '0', STR_PAD_LEFT);
     }
 }
