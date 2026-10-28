@@ -6,6 +6,7 @@ namespace Sopheak\JwtAuth\Services;
 
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Contracts\Auth\Authenticatable;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Str;
 use Sopheak\JwtAuth\Contracts\PasswordResetSender;
@@ -78,29 +79,33 @@ final readonly class PasswordResetBroker
     private function check(string $token, bool $consume): PasswordResetResult
     {
         [$id, $secret] = $this->parseToken($token);
-        $record = PasswordResetToken::query()->find($id);
 
-        if (! $record instanceof PasswordResetToken || $record->used_at !== null || $record->expires_at->isPast() || $record->attempts >= $record->max_attempts) {
-            throw new AuthenticationException('Password reset token is invalid.');
-        }
+        return DB::transaction(function () use ($id, $secret, $consume): PasswordResetResult {
+            /** @var PasswordResetToken|null $record */
+            $record = PasswordResetToken::query()->lockForUpdate()->find($id);
 
-        if (! $this->hasher->verify($secret, $record->token_hash, $record->hash_key_id)) {
-            $record->increment('attempts');
-            throw new AuthenticationException('Password reset token is invalid.');
-        }
+            if (! $record instanceof PasswordResetToken || $record->used_at !== null || $record->expires_at->isPast() || $record->attempts >= $record->max_attempts) {
+                throw new AuthenticationException('Password reset token is invalid.');
+            }
 
-        if ($consume) {
-            $record->forceFill(['used_at' => now()])->save();
-        }
+            if (! $this->hasher->verify($secret, $record->token_hash, $record->hash_key_id)) {
+                $record->increment('attempts');
+                throw new AuthenticationException('Password reset token is invalid.');
+            }
 
-        $user = $this->resolveUser($record->user_type, (string) $record->user_id);
-        $result = new PasswordResetResult($user, (string) ($user->email ?? $record->email_masked));
+            if ($consume) {
+                $record->forceFill(['used_at' => now()])->save();
+            }
 
-        if ($consume) {
-            Event::dispatch(new PasswordResetTokenConsumed($result));
-        }
+            $user = $this->resolveUser($record->user_type, (string) $record->user_id);
+            $result = new PasswordResetResult($user, (string) ($user->email ?? $record->email_masked));
 
-        return $result;
+            if ($consume) {
+                Event::dispatch(new PasswordResetTokenConsumed($result));
+            }
+
+            return $result;
+        });
     }
 
     private function parseToken(string $token): array

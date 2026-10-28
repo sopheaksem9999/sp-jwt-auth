@@ -6,6 +6,7 @@ namespace Sopheak\JwtAuth\Services;
 
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Contracts\Auth\Authenticatable;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Str;
 use Sopheak\JwtAuth\Contracts\EmailVerificationSender;
@@ -66,23 +67,27 @@ final readonly class EmailVerificationBroker
     public function verifyEmailToken(string $token): EmailVerificationResult
     {
         [$id, $secret] = $this->parseToken($token);
-        $record = EmailVerificationToken::query()->find($id);
 
-        if (! $record instanceof EmailVerificationToken || $record->verified_at !== null || $record->expires_at->isPast()) {
-            throw new AuthenticationException('Verification token is invalid.');
-        }
+        return DB::transaction(function () use ($id, $secret): EmailVerificationResult {
+            /** @var EmailVerificationToken|null $record */
+            $record = EmailVerificationToken::query()->lockForUpdate()->find($id);
 
-        if (! $this->hasher->verify($secret, $record->token_hash, $record->hash_key_id)) {
-            throw new AuthenticationException('Verification token is invalid.');
-        }
+            if (! $record instanceof EmailVerificationToken || $record->verified_at !== null || $record->expires_at->isPast()) {
+                throw new AuthenticationException('Verification token is invalid.');
+            }
 
-        $record->forceFill(['verified_at' => now()])->save();
+            if (! $this->hasher->verify($secret, $record->token_hash, $record->hash_key_id)) {
+                throw new AuthenticationException('Verification token is invalid.');
+            }
 
-        $user = $this->resolveUser($record->user_type, (string) $record->user_id);
-        $result = new EmailVerificationResult($user, $this->unmaskableEmail($user, $record));
-        Event::dispatch(new EmailVerified($result));
+            $record->forceFill(['verified_at' => now()])->save();
 
-        return $result;
+            $user = $this->resolveUser($record->user_type, (string) $record->user_id);
+            $result = new EmailVerificationResult($user, $this->unmaskableEmail($user, $record));
+            Event::dispatch(new EmailVerified($result));
+
+            return $result;
+        });
     }
 
     public function revokeVerificationTokens(Authenticatable $user): void
