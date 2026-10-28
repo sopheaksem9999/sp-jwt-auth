@@ -16,6 +16,11 @@ final class OAuthAuthorizationCode extends Model
 
     protected $guarded = [];
 
+    protected $hidden = [
+        'code_hash',
+        'hash_key_id',
+    ];
+
     protected $casts = [
         'scopes' => 'array',
         'claims' => 'array',

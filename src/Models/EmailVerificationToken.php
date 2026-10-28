@@ -16,6 +16,12 @@ final class EmailVerificationToken extends Model
 
     protected $guarded = [];
 
+    protected $hidden = [
+        'token_hash',
+        'email_hash',
+        'hash_key_id',
+    ];
+
     protected $casts = [
         'metadata' => 'array',
         'sent_at' => 'datetime',

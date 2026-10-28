@@ -16,6 +16,11 @@ final class OAuthClient extends Model
 
     protected $guarded = [];
 
+    protected $hidden = [
+        'secret_hash',
+        'hash_key_id',
+    ];
+
     protected $casts = [
         'confidential' => 'boolean',
         'first_party' => 'boolean',

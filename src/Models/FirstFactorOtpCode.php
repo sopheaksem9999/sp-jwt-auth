@@ -16,6 +16,12 @@ final class FirstFactorOtpCode extends Model
 
     protected $guarded = [];
 
+    protected $hidden = [
+        'code_hash',
+        'destination_hash',
+        'hash_key_id',
+    ];
+
     protected $casts = [
         'last_sent_at' => 'datetime',
         'verified_at' => 'datetime',

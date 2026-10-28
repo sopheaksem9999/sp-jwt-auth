@@ -18,6 +18,10 @@ final class ExternalIdentity extends Model
 
     protected $guarded = [];
 
+    protected $hidden = [
+        'provider_tokens',
+    ];
+
     protected $casts = [
         'email_verified' => 'boolean',
         'raw_profile' => 'array',

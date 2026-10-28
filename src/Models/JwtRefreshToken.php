@@ -16,6 +16,11 @@ final class JwtRefreshToken extends Model
 
     protected $guarded = [];
 
+    protected $hidden = [
+        'secret_hash',
+        'hash_key_id',
+    ];
+
     protected $casts = [
         'scopes' => 'array',
         'claims' => 'array',
