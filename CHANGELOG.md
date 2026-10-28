@@ -2,6 +2,28 @@
 
 All notable changes to `sopheak/sp-jwt-auth` will be documented in this file.
 
+## [0.1.26] - 2026-10-28
+
+### Security
+- Protected 12 credential and token models (`ApiKey`, `JwtRefreshToken`, `OAuthClient`, `OAuthAccessToken`, `OAuthRefreshToken`, `OAuthAuthorizationCode`, `FirstFactorOtpCode`, `MfaOtpCode`, `PasswordResetToken`, `EmailVerificationToken`, `ExternalIdentity`, `Device`) with `protected $hidden` attributes for secret hashes, provider tokens, and client secrets to prevent unintentional exposure in JSON and array serialization.
+- Hardened `JwtTokenService::rotateRefreshToken()` so refresh token reuse detection and session revocation persist outside the active database transaction, preventing transaction rollbacks from cancelling session revocation when an `AuthenticationException` is thrown.
+- Added pessimistic concurrency locking (`lockForUpdate()`) to `PasswordResetBroker` and `EmailVerificationBroker` during verification to prevent race conditions on simultaneous token redemption.
+- Ensured `PasswordResetBroker::check()` commits incremented attempt counters to the database before raising an `AuthenticationException`, neutralizing brute-force protection bypass through transaction rollbacks.
+- Standardized uniform OTP entropy across full digit range using left-zero-padding in `FirstFactorOtpBroker` and `OtpChallengeBroker`, ensuring all possible codes in $[0, 10^N - 1]$ have equal generation probability.
+- Blocked empty-destination and whitespace-only user resolution and registration in `DefaultFirstFactorUserResolver`.
+
+### Added
+- Official Flutter / Dart client SDK published: [`sp_jwt_auth` on pub.dev](https://pub.dev/packages/sp_jwt_auth) with automatic refresh token rotation, secure storage, and HTTP/Dio interceptors.
+- Official JavaScript / TypeScript client SDK published: [`@sokpheak/sp-jwt-auth` on npm](https://www.npmjs.com/package/@sokpheak/sp-jwt-auth) with Axios and fetch integration.
+- Full SPA and mobile client integration guides in `docs/tutorials/spa-mobile-integration.md` and `docs/client-install.md`.
+- Trail repository context graph navigation hooks (`.trail/antigravity-hook.cjs`, `.agents/skills/trail/SKILL.md`).
+- Clef automated bug diagnosis and triage rule (`.agents/rules/clef-auto-triage.md`).
+
+### Fixed
+- Applied configured `clock_skew_seconds` leeway to `access_tokens.expires_at` database check in `JwtTokenService` to prevent premature expiration on minor server clock differences.
+- Added `actingAs()` authentication support to `JwtGuard` for seamless testing with Laravel's built-in test helpers.
+- Handled refresh token reuse detection when a revoked token is re-read inside a pessimistic lock.
+
 ## [0.1.25] - 2026-10-26
 
 ### Security

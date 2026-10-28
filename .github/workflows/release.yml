@@ -117,6 +117,27 @@ jobs:
           git tag "$VERSION"
           git push "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" "$VERSION"
 
+      - name: Prepare Release Notes
+        if: steps.check.outputs.exists == 'false'
+        env:
+          VERSION: ${{ steps.read.outputs.version }}
+        run: |
+          cat << 'EOF' > release-notes.md
+          ### Client Packages & Ecosystem
+          - **Flutter / Dart:** [`sp_jwt_auth` on pub.dev](https://pub.dev/packages/sp_jwt_auth)
+          - **JavaScript / TypeScript:** [`@sokpheak/sp-jwt-auth` on npm](https://www.npmjs.com/package/@sokpheak/sp-jwt-auth)
+
+          EOF
+
+          php -r '
+          $version = getenv("VERSION");
+          $content = file_exists("CHANGELOG.md") ? file_get_contents("CHANGELOG.md") : "";
+          $pattern = "/## \[" . preg_quote($version, "/") . "\].*?\n(.*?)(?=\n## \[|\z)/s";
+          if (preg_match($pattern, $content, $matches)) {
+              file_put_contents("release-notes.md", trim($matches[1]) . "\n\n", FILE_APPEND);
+          }
+          '
+
       - name: Create GitHub Release
         if: steps.check.outputs.exists == 'false'
         env:
@@ -126,6 +147,7 @@ jobs:
           gh release create "$VERSION" \
             --repo "${GITHUB_REPOSITORY}" \
             --title "$VERSION" \
+            --notes-file release-notes.md \
             --generate-notes
 
   # ─────────────────────────────────────────────
@@ -233,6 +255,30 @@ jobs:
           git tag "$BETA_TAG"
           git push "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" "$BETA_TAG"
 
+      - name: Prepare Pre-Release Notes
+        if: steps.check.outputs.exists == 'false'
+        env:
+          VERSION: ${{ steps.read.outputs.version }}
+          BETA_TAG: ${{ steps.beta.outputs.tag }}
+        run: |
+          cat << 'EOF' > beta-release-notes.md
+          > **Pre-release build for testing and staging environments.**
+
+          ### Client Packages & Ecosystem
+          - **Flutter / Dart:** [`sp_jwt_auth` on pub.dev](https://pub.dev/packages/sp_jwt_auth)
+          - **JavaScript / TypeScript:** [`@sokpheak/sp-jwt-auth` on npm](https://www.npmjs.com/package/@sokpheak/sp-jwt-auth)
+
+          EOF
+
+          php -r '
+          $version = getenv("VERSION");
+          $content = file_exists("CHANGELOG.md") ? file_get_contents("CHANGELOG.md") : "";
+          $pattern = "/## \[" . preg_quote($version, "/") . "\].*?\n(.*?)(?=\n## \[|\z)/s";
+          if (preg_match($pattern, $content, $matches)) {
+              file_put_contents("beta-release-notes.md", trim($matches[1]) . "\n\n", FILE_APPEND);
+          }
+          '
+
       - name: Create GitHub Pre-Release
         if: steps.check.outputs.exists == 'false'
         env:
@@ -242,5 +288,6 @@ jobs:
           gh release create "$BETA_TAG" \
             --repo "${GITHUB_REPOSITORY}" \
             --title "$BETA_TAG" \
+            --notes-file beta-release-notes.md \
             --generate-notes \
             --prerelease

@@ -1,0 +1,50 @@
+# Configuration for GitHub Release Notes Generation
+# https://docs.github.com/en/repositories/releasing-projects-on-github/automatically-generated-release-notes
+
+changelog:
+  categories:
+    - title: "🔒 Security Hardening & Defenses"
+      labels:
+        - "security"
+        - "vulnerability"
+        - "hardening"
+    - title: "📱 Client SDKs & Ecosystem"
+      labels:
+        - "client"
+        - "sdk"
+        - "flutter"
+        - "npm"
+        - "integration"
+    - title: "🚀 Features & Improvements"
+      labels:
+        - "feature"
+        - "enhancement"
+        - "feat"
+    - title: "🐛 Bug Fixes & Resilience"
+      labels:
+        - "fix"
+        - "bug"
+        - "bugfix"
+    - title: "⚡ Performance Optimizations"
+      labels:
+        - "perf"
+        - "performance"
+        - "optimization"
+    - title: "📚 Documentation"
+      labels:
+        - "documentation"
+        - "docs"
+    - title: "🧪 Testing & Code Quality"
+      labels:
+        - "test"
+        - "testing"
+        - "refactor"
+        - "style"
+    - title: "🛠 Maintenance & Tooling"
+      labels:
+        - "chore"
+        - "ci"
+        - "dependencies"
+  exclude:
+    labels:
+      - "ignore-for-release"
