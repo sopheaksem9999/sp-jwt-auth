@@ -194,6 +194,8 @@ final readonly class JwtTokenService
             }
 
             if ($row->isRevoked()) {
+                Event::dispatch(new RefreshTokenReuseDetected($row));
+                $this->applyReuseDetection($row);
                 throw new AuthenticationException('Unauthenticated.');
             }
 
