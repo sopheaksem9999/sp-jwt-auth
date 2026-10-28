@@ -5,8 +5,6 @@ declare(strict_types=1);
 namespace Sopheak\JwtAuth\Tests\Feature;
 
 use Illuminate\Auth\AuthenticationException;
-use Sopheak\JwtAuth\Models\EmailVerificationToken;
-use Sopheak\JwtAuth\Models\PasswordResetToken;
 use Sopheak\JwtAuth\Services\EmailVerificationBroker;
 use Sopheak\JwtAuth\Services\PasswordResetBroker;
 use Sopheak\JwtAuth\Tests\TestCase;

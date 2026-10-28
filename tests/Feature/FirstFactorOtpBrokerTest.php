@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sopheak\JwtAuth\Tests\Feature;
 
+use Sopheak\JwtAuth\Services\DefaultFirstFactorUserResolver;
 use Closure;
 use InvalidArgumentException;
 use Illuminate\Auth\AuthenticationException;
@@ -436,7 +437,7 @@ final class FirstFactorOtpBrokerTest extends TestCase
 
     public function test_verify_rejects_when_destination_is_empty_string_and_resolver_returns_null(): void
     {
-        $this->app->instance(\Sopheak\JwtAuth\Contracts\FirstFactorUserResolver::class, new \Sopheak\JwtAuth\Services\DefaultFirstFactorUserResolver());
+        $this->app->instance(FirstFactorUserResolver::class, new DefaultFirstFactorUserResolver());
         config()->set('sp-jwt-auth.first_factor_otp.user_model', User::class);
         $this->createUser(['email' => '']);
 

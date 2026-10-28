@@ -15,6 +15,7 @@ use Sopheak\JwtAuth\Support\LastUsedThrottle;
 final class JwtGuard implements Guard
 {
     private ?Authenticatable $user = null;
+
     private bool $userWasSetExplicitly = false;
 
     public function __construct(

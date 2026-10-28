@@ -38,8 +38,6 @@ final class RefreshRotationConcurrencyTest extends TestCase
             // Expected
         }
 
-        Event::assertDispatched(RefreshTokenReuseDetected::class, static function (RefreshTokenReuseDetected $event) use ($pair): bool {
-            return $event->refreshToken->id === $pair->refreshTokenRecord->id;
-        });
+        Event::assertDispatched(RefreshTokenReuseDetected::class, static fn(RefreshTokenReuseDetected $event): bool => $event->refreshToken->id === $pair->refreshTokenRecord->id);
     }
 }
