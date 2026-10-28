@@ -15,8 +15,17 @@ hero:
     - theme: alt
       text: "Packagist"
       link: "https://packagist.org/packages/sopheak/sp-jwt-auth"
+    - theme: alt
+      text: "Flutter SDK"
+      link: "https://pub.dev/packages/sp_jwt_auth"
+    - theme: alt
+      text: "npm Package"
+      link: "https://www.npmjs.com/package/@sokpheak/sp-jwt-auth"
 
 features:
+  - title: "Client SDKs (Flutter & JS)"
+    details: "First-party client packages with HTTP interceptors, automatic refresh rotation, secure token storage, and guest device support."
+    link: "/tutorials/spa-mobile-integration"
   - title: "JWT Token Endpoints"
     details: "Ready-made HTTP endpoints for JWT-native refresh rotation and session revocation, with no OAuth client involved."
     link: "/guide/token-endpoints"

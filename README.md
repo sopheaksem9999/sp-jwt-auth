@@ -5,6 +5,8 @@
 [![PHP Version](https://img.shields.io/packagist/dependency-v/sopheak/sp-jwt-auth/php.svg)](composer.json)
 [![License](https://img.shields.io/packagist/l/sopheak/sp-jwt-auth.svg)](LICENSE)
 [![Security](https://github.com/sopheak/sp-jwt-auth/actions/workflows/security.yml/badge.svg)](https://github.com/sopheak/sp-jwt-auth/actions/workflows/security.yml)
+[![pub package](https://img.shields.io/pub/v/sp_jwt_auth.svg?label=pub.dev&color=0175C2)](https://pub.dev/packages/sp_jwt_auth)
+[![npm version](https://img.shields.io/npm/v/@sokpheak/sp-jwt-auth.svg?label=npm&color=CB3837)](https://www.npmjs.com/package/@sokpheak/sp-jwt-auth)
 
 `sopheak/sp-jwt-auth` is a modular Laravel authentication package for first-party JWT APIs, rotating opaque refresh tokens, account security workflows, API keys, external identity links, and optional OAuth server mode.
 
@@ -12,8 +14,25 @@ The package owns authentication infrastructure. Your application still owns pass
 
 Public package links:
 
-- Documentation: [sp-jwt-auth-docs.vercel.app](https://sp-jwt-auth-docs.vercel.app/)
-- Packagist: [packagist.org/packages/sopheak/sp-jwt-auth](https://packagist.org/packages/sopheak/sp-jwt-auth)
+- **Documentation:** [sp-jwt-auth-docs.vercel.app](https://sp-jwt-auth-docs.vercel.app/)
+- **Laravel Backend (Packagist):** [packagist.org/packages/sopheak/sp-jwt-auth](https://packagist.org/packages/sopheak/sp-jwt-auth)
+- **Flutter / Dart Client (pub.dev):** [pub.dev/packages/sp_jwt_auth](https://pub.dev/packages/sp_jwt_auth)
+- **JavaScript / TypeScript Client (npm):** [npmjs.com/package/@sokpheak/sp-jwt-auth](https://www.npmjs.com/package/@sokpheak/sp-jwt-auth)
+
+## Client SDKs & Libraries
+
+First-party frontend and mobile applications can use official client packages that pair directly with `sopheak/sp-jwt-auth`:
+
+| Platform | Package | Install | Links |
+| --- | --- | --- | --- |
+| **Flutter / Dart** | `sp_jwt_auth` | `flutter pub add sp_jwt_auth` | [![pub package](https://img.shields.io/pub/v/sp_jwt_auth.svg)](https://pub.dev/packages/sp_jwt_auth) · [Documentation](https://pub.dev/packages/sp_jwt_auth) |
+| **JavaScript / TypeScript** | `@sokpheak/sp-jwt-auth` | `npm install @sokpheak/sp-jwt-auth` | [![npm version](https://img.shields.io/npm/v/@sokpheak/sp-jwt-auth.svg)](https://www.npmjs.com/package/@sokpheak/sp-jwt-auth) · [Documentation](https://www.npmjs.com/package/@sokpheak/sp-jwt-auth) |
+
+### Features provided by client SDKs:
+- **Automatic 401 Interceptors & Token Refresh Queuing:** Intercepts expired tokens, calls `/auth/token/refresh` or custom endpoints, transparently retries queued in-flight requests, and redirects to login on session invalidation.
+- **Secure Token Storage:** Secure storage adapters for Flutter (Keychain/Keystore) and Web (in-memory, localStorage, sessionStorage, or HttpOnly cookie transport).
+- **CSRF & Cookie Coordination:** Built-in double-submit CSRF cookie support matching the package's `RefreshCookie` system.
+- **Pre-Login Device Registration & Guest Upgrades:** Works seamlessly with the optional `DeviceService` module for guest carts and anonymous session migration.
 
 ## Features
 

@@ -18,7 +18,9 @@ Use this map to route readers and AI agents to the smallest useful document.
 Public links:
 
 - Documentation site: [https://sp-jwt-auth-docs.vercel.app](https://sp-jwt-auth-docs.vercel.app)
-- Packagist: [https://packagist.org/packages/sopheak/sp-jwt-auth](https://packagist.org/packages/sopheak/sp-jwt-auth)
+- Laravel Backend (Packagist): [https://packagist.org/packages/sopheak/sp-jwt-auth](https://packagist.org/packages/sopheak/sp-jwt-auth)
+- Flutter / Dart Client (pub.dev): [https://pub.dev/packages/sp_jwt_auth](https://pub.dev/packages/sp_jwt_auth)
+- JavaScript / TypeScript Client (npm): [https://www.npmjs.com/package/@sokpheak/sp-jwt-auth](https://www.npmjs.com/package/@sokpheak/sp-jwt-auth)
 
 ## Guide
 

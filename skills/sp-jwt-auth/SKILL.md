@@ -17,6 +17,11 @@ First-party JWT access and rotating refresh token authentication for Laravel app
 - Agent guidelines: `vendor/sopheak/sp-jwt-auth/guidelines/sp-jwt-auth.md`
 - Full docs: `vendor/sopheak/sp-jwt-auth/docs/` (or the published docs site referenced in the package README)
 
+## Client SDKs
+
+- Flutter / Dart: [`sp_jwt_auth` on pub.dev](https://pub.dev/packages/sp_jwt_auth) (`flutter pub add sp_jwt_auth`)
+- JavaScript / TypeScript: [`@sokpheak/sp-jwt-auth` on npm](https://www.npmjs.com/package/@sokpheak/sp-jwt-auth) (`npm install @sokpheak/sp-jwt-auth`)
+
 ## Key concepts
 
 - `sp-jwt` auth guard registered in `config/auth.php` (patched automatically by `sp-jwt-auth:setup`).

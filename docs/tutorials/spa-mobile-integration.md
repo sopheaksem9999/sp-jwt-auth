@@ -7,6 +7,21 @@ description: "Token storage, refresh strategy, and logout flows for first-party 
 
 First-party clients (SPA, mobile app, desktop app) use the package's first-party JWT auth flow.
 
+## Official Client Packages
+
+Rather than manually implementing token storage, refresh concurrency queues, and HTTP interceptors, use the official client SDKs:
+
+- **Flutter / Dart:** [`sp_jwt_auth` on pub.dev](https://pub.dev/packages/sp_jwt_auth)
+  ```bash
+  flutter pub add sp_jwt_auth
+  ```
+- **JavaScript / TypeScript (Vue, React, Next.js, Nuxt, Node):** [`@sokpheak/sp-jwt-auth` on npm](https://www.npmjs.com/package/@sokpheak/sp-jwt-auth)
+  ```bash
+  npm install @sokpheak/sp-jwt-auth
+  ```
+
+Both libraries handle token lifecycle management, concurrent 401 refresh queuing, and seamless coordination with the Laravel backend.
+
 ## Token Format
 
 The `TokenResponse::passportCompatible()` helper returns:

@@ -20,6 +20,12 @@ Guidelines for agents working with applications that use `sopheak/sp-jwt-auth`.
 
 - Add `Sopheak\JwtAuth\Traits\HasJwtTokens` to the `User` model for `$user->token()` / `$user->tokenCan($scope)` / `$user->withAccessToken($token)`.
 
+## Client SDKs
+
+For client applications (frontend / mobile) integrating with the Laravel API:
+- Flutter / Dart: `sp_jwt_auth` on pub.dev (`flutter pub add sp_jwt_auth` — https://pub.dev/packages/sp_jwt_auth)
+- JavaScript / TypeScript: `@sokpheak/sp-jwt-auth` on npm (`npm install @sokpheak/sp-jwt-auth` — https://www.npmjs.com/package/@sokpheak/sp-jwt-auth)
+
 ## Security rules
 
 - Never log, print, or commit tokens, secrets, or private keys.

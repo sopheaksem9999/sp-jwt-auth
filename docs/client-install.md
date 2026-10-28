@@ -108,6 +108,19 @@ The default resolver finds users by the destination column (`email`/`phone`, low
 
 Enable `SP_JWT_TOKEN_ENDPOINTS_ENABLED=true` to expose `POST /auth/token/refresh` (unauthenticated; rotates a JWT-native refresh token pair, generic 401 on invalid/reused tokens) and `POST /auth/token/revoke` (authenticated; revokes the current access token's whole session). No OAuth client required — these operate on the JWT-native `sp_jwt_access_tokens` / `sp_jwt_refresh_tokens` tables. Response wrapping is configurable via `token_endpoints.response_envelope` (`SP_JWT_TOKEN_ENDPOINTS_RESPONSE_ENVELOPE`: `raw` | `laravel` | custom class).
 
+## Client SDKs (Frontend & Mobile Apps)
+
+For client applications consuming your Laravel API, official client libraries handle token storage, 401 interception, automatic refresh rotation, and device registration out-of-the-box:
+
+- **Flutter / Dart:** [`sp_jwt_auth` on pub.dev](https://pub.dev/packages/sp_jwt_auth)
+  ```bash
+  flutter pub add sp_jwt_auth
+  ```
+- **JavaScript / TypeScript (Web, React, Vue, Next.js, Node):** [`@sokpheak/sp-jwt-auth` on npm](https://www.npmjs.com/package/@sokpheak/sp-jwt-auth)
+  ```bash
+  npm install @sokpheak/sp-jwt-auth
+  ```
+
 ## Security rules for agents
 
 - Never log tokens, secrets, or private keys.
