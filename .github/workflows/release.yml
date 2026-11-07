@@ -156,11 +156,12 @@ jobs:
   # e.g. 0.3.93-beta.42
   # ─────────────────────────────────────────────
   release-beta:
-    # Only run when CI passed for a push to develop.
+    # Only run when CI passed for a push to develop AND commit message requests a beta release.
     if: |
       github.event.workflow_run.conclusion == 'success' &&
       github.event.workflow_run.event == 'push' &&
-      github.event.workflow_run.head_branch == 'develop'
+      github.event.workflow_run.head_branch == 'develop' &&
+      contains(github.event.workflow_run.head_commit.message, '[release-beta]')
     runs-on: ubuntu-latest
     permissions:
       actions: read
