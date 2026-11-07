@@ -52,6 +52,7 @@ Public links:
 
 - [Events and Hooks](./guide/events-hooks.md)
 - [Testing and Quality](./guide/testing-quality.md)
+- [v1.0.0 Stabilization Roadmap](./roadmap/v1-stabilization.md)
 
 ## AI Context
 
