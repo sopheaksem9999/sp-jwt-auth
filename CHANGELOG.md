@@ -2,6 +2,21 @@
 
 All notable changes to `sopheak/sp-jwt-auth` will be documented in this file.
 
+## [0.1.27] - 2026-11-07
+
+### Security
+- Modernized SAST scanning in `.github/workflows/security.yml` by replacing the archived `semgrep/semgrep-action@v1` with the official `semgrep/semgrep` Docker container, pinned to immutable digest `1.184.0@sha256:cc1b68266f267878b39739373ea9985b9a78e5d64497dd875c8de100b22695ed`.
+- Added automated fail-closed token fallback to Semgrep SAST scanning (`semgrep ci` when `SEMGREP_APP_TOKEN` is present, falling back to local `semgrep scan --error` when absent) to prevent unconfigured secrets from failing CI.
+- Pinned all 12 external GitHub Action dependencies across `main.yml`, `security.yml`, and `release.yml` to immutable 40-character commit SHAs with inline version comments to mitigate supply-chain tampering.
+- Added automated `WorkflowActionPinningTest` in PHPUnit to enforce and verify that no floating tags or archived actions can be introduced in CI workflows.
+
+### Changed
+- Gated automated pre-releases in `.github/workflows/release.yml` (`release-beta`) behind the `[release-beta]` commit message flag, halting automated tag inflation on routine development commits while preserving automated production releases on `main`.
+
+### Added
+- Authoritative open-source governance guidelines ([`GOVERNANCE.md`](GOVERNANCE.md)) defining project leadership by `@sopheaksem9999`, a 4-tier Contributor Ladder (Contributor -> Triager -> Reviewer -> Maintainer), code review quality gates, security triaging protocols, and emergency maintainer succession procedures.
+- Formal v1.0.0 stabilization roadmap ([`docs/roadmap/v1-stabilization.md`](docs/roadmap/v1-stabilization.md)) establishing the milestone checklist for public API freezing, cross-SDK compatibility with Flutter and npm, and SemVer graduation.
+
 ## [0.1.26] - 2026-10-28
 
 ### Security
