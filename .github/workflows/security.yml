@@ -62,28 +62,30 @@ jobs:
 
   # ─────────────────────────────────────────────────────────────────────────────
   # 3. Static Application Security Testing (SAST) for PHP
-  #    Tool: Semgrep (free for open source, has PHP ruleset)
+  #    Tool: Semgrep (official container image, pinned)
   #    Catches: SQL injection, XSS, command injection, path traversal,
   #             insecure deserialization, hardcoded secrets in code logic
   # ─────────────────────────────────────────────────────────────────────────────
   scan-sast:
     name: SAST — PHP Code (Semgrep)
     runs-on: ubuntu-latest
+    container:
+      image: semgrep/semgrep:1.184.0@sha256:cc1b68266f267878b39739373ea9985b9a78e5d64497dd875c8de100b22695ed
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           persist-credentials: false
 
       - name: Run Semgrep
-        uses: semgrep/semgrep-action@v1
-        with:
-          config: >-
-            p/php
-            p/laravel
-            p/secrets
-            p/owasp-top-ten
         env:
           SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}
+        run: |
+          CONFIGS="--config=p/php --config=p/laravel --config=p/secrets --config=p/owasp-top-ten"
+          if [ -n "${SEMGREP_APP_TOKEN:-}" ]; then
+            semgrep ci $CONFIGS
+          else
+            semgrep scan --error $CONFIGS
+          fi
 
   # ─────────────────────────────────────────────────────────────────────────────
   # 4. File system audit — catches suspicious files before they reach main
