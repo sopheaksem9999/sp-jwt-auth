@@ -145,6 +145,11 @@ Authorization: Bearer <access-token>
 
 For configuration, token claims, refresh and revocation, account-security workflows, API keys, external identity, OAuth server mode, middleware, and deployment guidance, visit the [official sp-jwt-auth documentation](https://sp-jwt-auth-docs.vercel.app/).
 
+## Security & Governance
+
+- **Security Policy:** If you discover a security vulnerability, please review our [Security Policy](SECURITY.md) to report it responsibly.
+- **Project Governance:** Maintenance responsibilities, review standards, and the contributor ladder are documented in [GOVERNANCE.md](GOVERNANCE.md).
+
 ## License
 
 This package is open-source software licensed under the [MIT license](LICENSE).
