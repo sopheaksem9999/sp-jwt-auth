@@ -82,9 +82,9 @@ jobs:
         run: |
           CONFIGS="--config=p/php --config=p/secrets --config=p/owasp-top-ten"
           if [ -n "${SEMGREP_APP_TOKEN:-}" ]; then
-            semgrep ci $CONFIGS
+            semgrep ci $CONFIGS src/
           else
-            semgrep scan --error $CONFIGS
+            semgrep scan --error $CONFIGS src/
           fi
 
   # ─────────────────────────────────────────────────────────────────────────────

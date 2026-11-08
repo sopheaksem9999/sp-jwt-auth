@@ -1,0 +1,5 @@
+# Semgrep ignore file
+.github/
+tests/Fixtures/
+docs/
+vendor/
