@@ -2,6 +2,15 @@
 
 All notable changes to `sopheak/sp-jwt-auth` will be documented in this file.
 
+## [0.1.28] - 2026-11-08
+
+### Security
+- Hardened `PasswordResetBroker::consumeResetToken()` to atomically revoke all outstanding, unconsumed sibling password reset tokens for the user in the database upon successful token consumption, eliminating replay and token accumulation risks.
+- Resolved Semgrep SAST workflow configuration in `.github/workflows/security.yml` by removing the unmaintained `p/laravel` ruleset from the Semgrep registry call, fixing CI failures.
+
+### Added
+- Added automated regression test in `AccountSecurityTest` verifying that consuming a password reset token invalidates any unconsumed sibling reset tokens issued to the same user.
+
 ## [0.1.27] - 2026-11-07
 
 ### Security

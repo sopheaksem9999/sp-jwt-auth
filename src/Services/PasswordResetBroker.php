@@ -96,6 +96,12 @@ final readonly class PasswordResetBroker
 
             if ($consume) {
                 $record->forceFill(['used_at' => now()])->save();
+
+                PasswordResetToken::query()
+                    ->where('user_type', $record->user_type)
+                    ->where('user_id', (string) $record->user_id)
+                    ->whereNull('used_at')
+                    ->update(['used_at' => now()]);
             }
 
             $user = $this->resolveUser($record->user_type, (string) $record->user_id);

@@ -89,4 +89,22 @@ final class AccountSecurityTest extends TestCase
         $this->expectException(AuthenticationException::class);
         app(PasswordResetBroker::class)->consumeResetToken($dispatch->token);
     }
+
+    public function test_consuming_password_reset_token_invalidates_sibling_tokens(): void
+    {
+        $user = $this->createUser();
+        $broker = app(PasswordResetBroker::class);
+
+        $dispatch1 = $broker->createResetToken($user, 'user@example.com');
+        $dispatch2 = $broker->createResetToken($user, 'user@example.com');
+
+        self::assertNotSame($dispatch1->token, $dispatch2->token);
+
+        $result1 = $broker->consumeResetToken($dispatch1->token);
+        self::assertSame('user@example.com', $result1->email);
+
+        // Sibling token must be invalidated
+        $this->expectException(AuthenticationException::class);
+        $broker->consumeResetToken($dispatch2->token);
+    }
 }

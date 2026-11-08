@@ -80,7 +80,7 @@ jobs:
         env:
           SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}
         run: |
-          CONFIGS="--config=p/php --config=p/laravel --config=p/secrets --config=p/owasp-top-ten"
+          CONFIGS="--config=p/php --config=p/secrets --config=p/owasp-top-ten"
           if [ -n "${SEMGREP_APP_TOKEN:-}" ]; then
             semgrep ci $CONFIGS
           else
