@@ -149,6 +149,21 @@ jobs:
             --notes-file release-notes.md \
             --generate-notes
 
+      - name: Prune obsolete beta pre-releases
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          beta_tags=$(gh release list \
+            --repo "${GITHUB_REPOSITORY}" \
+            --limit 100 \
+            --json tagName,isPrerelease \
+            --jq '.[] | select(.isPrerelease == true or (.tagName | contains("-beta."))) | .tagName')
+          for tag in $beta_tags; do
+            echo "Deleting obsolete pre-release: $tag"
+            gh release delete "$tag" --repo "${GITHUB_REPOSITORY}" --cleanup-tag --yes || true
+          done
+
   # ─────────────────────────────────────────────
   # Beta pre-release — triggered by push to develop
   # Tag format: {version}-beta.{run_number}

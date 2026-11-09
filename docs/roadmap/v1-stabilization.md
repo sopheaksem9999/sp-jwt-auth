@@ -16,30 +16,30 @@ Under Semantic Versioning (`SemVer`), `0.x.y` indicates initial development wher
 ## 2. Graduation Criteria Checklist
 
 ### Milestone 1: Public Contract & API Freeze
-- [ ] **Contract Interfaces (`src/Contracts/`):** Ensure every primary service defines an immutable interface:
+- [x] **Contract Interfaces (`src/Contracts/`):** Ensure every primary service defines an immutable interface:
   - `JwtGuardContract` / `JwtGuard`
   - `JwtTokenServiceContract` / `JwtTokenService`
   - `DeviceServiceContract` / `DeviceService`
   - `FirstFactorOtpBroker` & `FirstFactorUserResolver`
   - `ExternalIdentityStore`
   - `SigningKeyRepository` & `HashKeyRepository`
-- [ ] **Method Signatures & Return Types:** Confirm all public methods use strict PHP 8.3+ scalar and union return types.
-- [ ] **DTO Immutability:** Verify all data transfer objects (`TokenContext`, `TokenResponse`, `DeviceRegistration`, `OtpDeliveryResult`) use `readonly` properties.
+- [x] **Method Signatures & Return Types:** Confirm all public methods use strict PHP 8.3+ scalar and union return types.
+- [x] **DTO Immutability:** Verify all data transfer objects (`TokenContext`, `TokenResponse`, `DeviceRegistration`, `OtpDeliveryResult`) use `readonly` properties.
 
 ### Milestone 2: Runtime Compatibility & Matrix Coverage
-- [ ] **PHP Compatibility:** 100% test pass on PHP 8.3 and PHP 8.4; pre-release validation on PHP 8.5.
-- [ ] **Laravel Compatibility:** Full test matrix across Laravel 12.x and Laravel 13.x.
-- [ ] **Database Engines:** Comprehensive integration test validation across SQLite (in-memory & file), MySQL 8+, and PostgreSQL 15+.
+- [x] **PHP Compatibility:** 100% test pass on PHP 8.3 and PHP 8.4; pre-release validation on PHP 8.5.
+- [x] **Laravel Compatibility:** Full test matrix across Laravel 12.x and Laravel 13.x.
+- [x] **Database Engines:** Comprehensive integration test validation across SQLite (in-memory & file), MySQL 8+, and PostgreSQL 15+.
 
 ### Milestone 3: Deprecation Sweep & Clean Migration
-- [ ] **Obsolete Configuration Pruning:** Verify all active config values in `config/sp-jwt-auth.php` are functional and documented.
-- [ ] **Migration Upgrades:** Ensure all database migrations in `database/migrations/` handle upgrade and rollback scenarios cleanly.
-- [ ] **Octane & Serverless Readiness:** Ensure all memoized singletons and key repositories safely isolate state across persistent Octane workers (FrankenPHP, RoadRunner, Swoole).
+- [x] **Obsolete Configuration Pruning:** Verify all active config values in `config/sp-jwt-auth.php` are functional and documented.
+- [x] **Migration Upgrades:** Ensure all database migrations in `database/migrations/` handle upgrade and rollback scenarios cleanly.
+- [x] **Octane & Serverless Readiness:** Ensure all memoized singletons and key repositories safely isolate state across persistent Octane workers (FrankenPHP, RoadRunner, Swoole).
 
 ### Milestone 4: Client SDK Synchronization
-- [ ] **Flutter / Dart SDK:** Ensure [`sp_jwt_auth` on pub.dev](https://pub.dev/packages/sp_jwt_auth) is verified against the `v1.0.0` backend API with complete Dio/Http interceptor coverage.
-- [ ] **TypeScript / JavaScript SDK:** Ensure [`@sokpheak/sp-jwt-auth` on npm](https://www.npmjs.com/package/@sokpheak/sp-jwt-auth) aligns with token refresh and cookie transport protocols.
-- [ ] **API Documentation:** Update all endpoint guides in `docs/` and client installation instructions in `docs/client-install.md`.
+- [x] **Flutter / Dart SDK:** Ensure [`sp_jwt_auth` on pub.dev](https://pub.dev/packages/sp_jwt_auth) is verified against the `v1.0.0` backend API with complete Dio/Http interceptor coverage.
+- [x] **TypeScript / JavaScript SDK:** Ensure [`@sokpheak/sp-jwt-auth` on npm](https://www.npmjs.com/package/@sokpheak/sp-jwt-auth) aligns with token refresh and cookie transport protocols.
+- [x] **API Documentation:** Update all endpoint guides in `docs/` and client installation instructions in `docs/client-install.md`.
 
 ---
 

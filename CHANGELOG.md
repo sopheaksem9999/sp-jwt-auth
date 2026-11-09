@@ -2,6 +2,12 @@
 
 All notable changes to `sopheak/sp-jwt-auth` will be documented in this file.
 
+## [1.0.0] - 2026-11-09
+
+### Changed
+- Graduated `sopheak/sp-jwt-auth` to **`1.0.0` Production Stable** under strict Semantic Versioning (SemVer 2.0.0), locking public contracts, DTOs, guards, brokers, and database migration schemas across Core JWT, Refresh Rotation, Device Management, Account Security, First-Factor OTP, API Keys, External Identity Links, and OAuth 2.0 Server Mode.
+- Added automated pruning of superseded `-beta.*` pre-releases in `.github/workflows/release.yml` when cutting stable releases on `main`.
+
 ## [0.1.29] - 2026-11-09
 
 ### Security
