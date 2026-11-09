@@ -2,6 +2,15 @@
 
 All notable changes to `sopheak/sp-jwt-auth` will be documented in this file.
 
+## [0.1.29] - 2026-11-09
+
+### Security
+- Replaced `workflow_run` trigger and `head_sha` checkout override in `.github/workflows/release.yml` with a direct `push` trigger that verifies both `CI` and `Security` workflow completion for `GITHUB_SHA` before tagging, eliminating untrusted code checkout risks in privileged release runs.
+- Updated pinned GitHub Action commit SHAs (`actions/checkout`, `actions/cache`) and dev dependencies (`phpstan/phpstan` 2.3.4) via Dependabot.
+
+### Added
+- Added unit test in `WorkflowActionPinningTest` verifying that `release.yml` does not use `workflow_run` untrusted checkouts.
+
 ## [0.1.28] - 2026-11-08
 
 ### Security

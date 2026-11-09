@@ -67,4 +67,14 @@ final class WorkflowActionPinningTest extends TestCase
             "release.yml must gate release-beta behind the '[release-beta]' commit message check."
         );
     }
+
+    public function test_release_workflow_does_not_use_workflow_run_untrusted_checkout(): void
+    {
+        $releaseYaml = (string) file_get_contents(__DIR__ . '/../../.github/workflows/release.yml');
+        self::assertStringNotContainsString(
+            'workflow_run',
+            $releaseYaml,
+            'release.yml must not use workflow_run triggers that check out untrusted code.'
+        );
+    }
 }

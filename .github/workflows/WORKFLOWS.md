@@ -87,11 +87,10 @@ Analyses PHP source code for security vulnerabilities without running it.
 | Ruleset | Catches |
 |---|---|
 | `p/php` | PHP-specific unsafe functions, type juggling, open redirects |
-| `p/laravel` | Mass assignment, unguarded routes, raw query usage |
 | `p/secrets` | Hardcoded passwords, tokens, and keys inside code logic |
 | `p/owasp-top-ten` | SQL injection, XSS, path traversal, insecure deserialization |
 
-**Tool:** [semgrep/semgrep-action@v1](https://github.com/semgrep/semgrep-action)
+**Tool:** `semgrep/semgrep` container image pinned by SHA-256 digest.
 **Setup required:**
 
 1. Create a free account at [semgrep.dev](https://semgrep.dev).
@@ -119,16 +118,15 @@ Inspects committed files for patterns associated with PHP webshells and maliciou
 
 ## release.yml
 
-**Trigger:** `workflow_run` — fires after the CI workflow completes on `main` or `develop`
-**Permission:** `contents: write` and `actions: read`
+**Trigger:** `push` to `main` or `develop`
+**Permission:** top-level `contents: read`; job-level `contents: write` and `actions: read`
 
-Release jobs are skipped entirely if:
-- CI failed or was cancelled (`conclusion != 'success'`),
-- The workflow event was not a `push`,
-- The branch is not `main` or `develop`, or
-- Security did not pass for the exact same commit.
+Release jobs are skipped or aborted if:
+- The event was not a `push` to `main` or `develop` (with `[release-beta]` required in the commit message for `develop`),
+- CI (`main.yml`) failed or was cancelled for the pushed commit SHA, or
+- Security (`security.yml`) did not pass for the exact same commit SHA.
 
-The checkout always uses `head_sha` from the CI run. Release then queries GitHub Actions to verify the Security workflow also passed for that same SHA, preventing a race condition where a different commit could be tagged.
+The checkout uses the direct `push` commit context (`GITHUB_SHA`) without `workflow_run` target-ref overrides, and queries GitHub Actions to verify both CI and Security passed for that exact SHA before tagging.
 
 ### Jobs
 

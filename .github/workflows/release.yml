@@ -1,22 +1,18 @@
 name: Release
 
-# Runs only after CI completes on main or develop.
-# Each release job also verifies Security passed for the exact same commit.
+# Runs on push to main or develop and verifies both CI and Security
+# succeeded for the exact pushed commit before creating any tag or release.
 on:
-  workflow_run:
-    workflows: ["CI"]
-    types:
-      - completed
+  push:
     branches:
       - main
       - develop
 
 permissions:
   contents: read
-  actions: read
 
 concurrency:
-  group: release-${{ github.event.workflow_run.head_branch }}
+  group: release-${{ github.ref_name }}
   cancel-in-progress: true
 
 jobs:
@@ -25,11 +21,10 @@ jobs:
   # Stable release — triggered by push to main
   # ─────────────────────────────────────────────
   release-stable:
-    # Only run when CI passed for a push to main.
+    # Only run on a direct push to main.
     if: |
-      github.event.workflow_run.conclusion == 'success' &&
-      github.event.workflow_run.event == 'push' &&
-      github.event.workflow_run.head_branch == 'main'
+      github.event_name == 'push' &&
+      github.ref_name == 'main'
     runs-on: ubuntu-latest
     permissions:
       actions: read
@@ -37,45 +32,49 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          # Check out the exact commit that CI scanned.
-          ref: ${{ github.event.workflow_run.head_sha }}
           fetch-depth: 0
           fetch-tags: true
           persist-credentials: false
 
-      - name: Verify Security passed for this commit
+      - name: Verify CI and Security passed for this commit
         env:
           GH_TOKEN: ${{ github.token }}
-          HEAD_BRANCH: ${{ github.event.workflow_run.head_branch }}
-          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+          HEAD_BRANCH: ${{ github.ref_name }}
+          HEAD_SHA: ${{ github.sha }}
         run: |
           set -euo pipefail
-          for attempt in $(seq 1 30); do
-            result=$(gh run list \
-              --repo "${GITHUB_REPOSITORY}" \
-              --workflow security.yml \
-              --branch "${HEAD_BRANCH}" \
-              --commit "${HEAD_SHA}" \
-              --limit 1 \
-              --json status,conclusion \
-              --jq '.[0] // empty | "\(.status) \(.conclusion)"')
+          for workflow in main.yml security.yml; do
+            passed=false
+            for attempt in $(seq 1 60); do
+              result=$(gh run list \
+                --repo "${GITHUB_REPOSITORY}" \
+                --workflow "${workflow}" \
+                --branch "${HEAD_BRANCH}" \
+                --commit "${HEAD_SHA}" \
+                --limit 1 \
+                --json status,conclusion \
+                --jq '.[0] // empty | "\(.status) \(.conclusion)"')
 
-            if [ "${result}" = "completed success" ]; then
-              echo "Security passed for ${HEAD_SHA}."
-              exit 0
-            fi
+              if [ "${result}" = "completed success" ]; then
+                echo "${workflow} passed for ${HEAD_SHA}."
+                passed=true
+                break
+              fi
 
-            if echo "${result}" | grep -q '^completed '; then
-              echo "::error::Security did not pass for ${HEAD_SHA}: ${result}"
+              if echo "${result}" | grep -q '^completed '; then
+                echo "::error::${workflow} did not pass for ${HEAD_SHA}: ${result}"
+                exit 1
+              fi
+
+              echo "Waiting for ${workflow} on ${HEAD_SHA}; attempt ${attempt}/60."
+              sleep 10
+            done
+
+            if [ "${passed}" != "true" ]; then
+              echo "::error::${workflow} did not complete in time for ${HEAD_SHA}."
               exit 1
             fi
-
-            echo "Waiting for Security for ${HEAD_SHA}; attempt ${attempt}/30."
-            sleep 10
           done
-
-          echo "::error::Security did not complete for ${HEAD_SHA}."
-          exit 1
 
       - name: Read version from VERSION or composer.json
         id: read
@@ -156,12 +155,11 @@ jobs:
   # e.g. 0.3.93-beta.42
   # ─────────────────────────────────────────────
   release-beta:
-    # Only run when CI passed for a push to develop AND commit message requests a beta release.
+    # Only run on push to develop when commit message requests a beta release.
     if: |
-      github.event.workflow_run.conclusion == 'success' &&
-      github.event.workflow_run.event == 'push' &&
-      github.event.workflow_run.head_branch == 'develop' &&
-      contains(github.event.workflow_run.head_commit.message, '[release-beta]')
+      github.event_name == 'push' &&
+      github.ref_name == 'develop' &&
+      contains(github.event.head_commit.message, '[release-beta]')
     runs-on: ubuntu-latest
     permissions:
       actions: read
@@ -169,45 +167,49 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          # Check out the exact commit that CI scanned.
-          ref: ${{ github.event.workflow_run.head_sha }}
           fetch-depth: 0
           fetch-tags: true
           persist-credentials: false
 
-      - name: Verify Security passed for this commit
+      - name: Verify CI and Security passed for this commit
         env:
           GH_TOKEN: ${{ github.token }}
-          HEAD_BRANCH: ${{ github.event.workflow_run.head_branch }}
-          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+          HEAD_BRANCH: ${{ github.ref_name }}
+          HEAD_SHA: ${{ github.sha }}
         run: |
           set -euo pipefail
-          for attempt in $(seq 1 30); do
-            result=$(gh run list \
-              --repo "${GITHUB_REPOSITORY}" \
-              --workflow security.yml \
-              --branch "${HEAD_BRANCH}" \
-              --commit "${HEAD_SHA}" \
-              --limit 1 \
-              --json status,conclusion \
-              --jq '.[0] // empty | "\(.status) \(.conclusion)"')
+          for workflow in main.yml security.yml; do
+            passed=false
+            for attempt in $(seq 1 60); do
+              result=$(gh run list \
+                --repo "${GITHUB_REPOSITORY}" \
+                --workflow "${workflow}" \
+                --branch "${HEAD_BRANCH}" \
+                --commit "${HEAD_SHA}" \
+                --limit 1 \
+                --json status,conclusion \
+                --jq '.[0] // empty | "\(.status) \(.conclusion)"')
 
-            if [ "${result}" = "completed success" ]; then
-              echo "Security passed for ${HEAD_SHA}."
-              exit 0
-            fi
+              if [ "${result}" = "completed success" ]; then
+                echo "${workflow} passed for ${HEAD_SHA}."
+                passed=true
+                break
+              fi
 
-            if echo "${result}" | grep -q '^completed '; then
-              echo "::error::Security did not pass for ${HEAD_SHA}: ${result}"
+              if echo "${result}" | grep -q '^completed '; then
+                echo "::error::${workflow} did not pass for ${HEAD_SHA}: ${result}"
+                exit 1
+              fi
+
+              echo "Waiting for ${workflow} on ${HEAD_SHA}; attempt ${attempt}/60."
+              sleep 10
+            done
+
+            if [ "${passed}" != "true" ]; then
+              echo "::error::${workflow} did not complete in time for ${HEAD_SHA}."
               exit 1
             fi
-
-            echo "Waiting for Security for ${HEAD_SHA}; attempt ${attempt}/30."
-            sleep 10
           done
-
-          echo "::error::Security did not complete for ${HEAD_SHA}."
-          exit 1
 
       - name: Read base version from VERSION or composer.json
         id: read
